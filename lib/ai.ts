@@ -38,9 +38,9 @@ Return ONLY this JSON, no markdown:
   "homeWinPct": <0-100>,
   "drawPct": <0-100>,
   "awayWinPct": <0-100>,
-  "verdict": "<e.g. Arsenal Win>",
+  "verdict": "<e.g. Arsenal Win | Draw | Over 1.5 Goals>",
   "confidence": <0-100>,
-  "bestBet": "<e.g. Arsenal Win + Over 1.5>",
+  "bestBet": "<the single safest bet from the list below>",
   "bestBetOdds": "<e.g. @1.72>",
   "riskLevel": "<LOW|MEDIUM|HIGH>",
   "riskReason": "<one sentence>",
@@ -61,6 +61,20 @@ Return ONLY this JSON, no markdown:
   "bestBetReason": "<2-3 sentences>"
 }
 
+BEST BET SELECTION RULES (pick ONE, prioritise safety):
+- If over15 >= 75%: bestBet = "Over 1.5 Goals"
+- Else if btts >= 65%: bestBet = "Both Teams to Score"
+- Else if over25 >= 65%: bestBet = "Over 2.5 Goals"
+- Else if homeWinPct >= 70%: bestBet = "${match.homeTeam.name} Win"
+- Else if awayWinPct >= 70%: bestBet = "${match.awayTeam.name} Win"
+- Else if (homeWinPct + drawPct) >= 75%: bestBet = "${match.homeTeam.name} or Draw (Double Chance)"
+- Else if (awayWinPct + drawPct) >= 75%: bestBet = "${match.awayTeam.name} or Draw (Double Chance)"
+- Else if under25 >= 65%: bestBet = "Under 2.5 Goals"
+- Else: bestBet = "No Value Bet — Skip This Match"
+
+VERDICT RULES:
+- verdict = the most likely outcome: "${match.homeTeam.name} Win", "Draw", or "${match.awayTeam.name} Win"
+
 Rules:
 - homeWinPct + drawPct + awayWinPct = exactly 100
 - keyFactors must have exactly 4 items
@@ -73,7 +87,8 @@ Rules:
         system: `You are an expert football analyst. 
 Always respond with valid JSON only. 
 No markdown, no extra text.
-Be realistic and unbiased in predictions.`,
+Be realistic and unbiased in predictions.
+Prioritise safe, high-probability bets over risky outright winners.`,
         messages: [{ role: 'user', content: prompt }],
     })
 

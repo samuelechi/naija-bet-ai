@@ -190,7 +190,9 @@ function HistoryCard({ item }: { item: HistoryItem }) {
         ? { color: '#4ade80', background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }
         : item.result === 'LOST'
             ? { color: '#f87171', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }
-            : { color: '#64748b', background: 'rgba(100,116,139,0.08)', border: '1px solid rgba(100,116,139,0.2)' }
+            : item.result === 'DRAW'
+                ? { color: '#94a3b8', background: 'rgba(148,163,184,0.08)', border: '1px solid rgba(148,163,184,0.2)' }
+                : { color: '#64748b', background: 'rgba(100,116,139,0.08)', border: '1px solid rgba(100,116,139,0.2)' }
 
     return (
         <div className="rounded-2xl p-4" style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>

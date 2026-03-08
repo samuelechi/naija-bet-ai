@@ -65,7 +65,7 @@ export async function POST(
             home_team: match.homeTeam.shortName,
             away_team: match.awayTeam.shortName,
             competition: match.competition.name,
-            verdict: prediction.verdict,
+            verdict: prediction.bestBet,
             prediction_data: prediction,
             expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
         }, {
