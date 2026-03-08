@@ -1,65 +1,186 @@
-import Image from "next/image";
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Match } from '@/types'
+import MatchCard from '@/components/match/MatchCard'
+import BottomNav from '@/components/layout/BottomNav'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+
+const FILTERS = ['All', 'EPL', 'La Liga', 'Serie A', 'UCL', 'NPFL']
+
+const LEAGUE_MAP: Record<string, string[]> = {
+  'EPL': ['Premier League'],
+  'La Liga': ['Primera Division'],
+  'Serie A': ['Serie A'],
+  'UCL': ['UEFA Champions League'],
+  'NPFL': ['NPFL'],
+}
 
 export default function Home() {
+  const router = useRouter()
+  const [matches, setMatches] = useState<Match[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeFilter, setActiveFilter] = useState('All')
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login')
+      } else {
+        const cached = sessionStorage.getItem('matches')
+        if (cached) {
+          setMatches(JSON.parse(cached))
+          setLoading(false)
+          return
+        }
+        fetchMatches()
+      }
+    })
+  }, [])
+
+  async function fetchMatches() {
+    try {
+      const res = await fetch('/api/matches')
+      const data = await res.json()
+      const m = data.matches || []
+      setMatches(m)
+      sessionStorage.setItem('matches', JSON.stringify(m))
+    } catch (err) {
+      console.error('Failed to fetch matches:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const filtered = activeFilter === 'All'
+    ? matches
+    : matches.filter(m =>
+      LEAGUE_MAP[activeFilter]?.some(l =>
+        m.competition.name.toLowerCase().includes(l.toLowerCase())
+      )
+    )
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
+
+      {/* Header */}
+      <div className="relative pt-14 pb-5 px-5 overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 rounded-full blur-3xl"
+            style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.18) 0%, transparent 70%)' }} />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        {/* Top row */}
+        <div className="flex items-center justify-between mb-5 relative">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+              style={{ background: 'linear-gradient(135deg, #166534, #15803d)', border: '1px solid rgba(74,222,128,0.2)' }}>
+              ⚽
+            </div>
+            <div>
+              <span className="text-white font-black text-base tracking-tight font-display">NaijaBetAI</span>
+              <div className="flex items-center gap-1">
+                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <span className="text-[9px] text-green-400/70 uppercase tracking-wider font-bold">Live Predictions</span>
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push('/profile')}
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
+            style={{ background: 'linear-gradient(135deg, #1f2937, #111827)', border: '1px solid rgba(255,255,255,0.08)' }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            😎
+          </button>
         </div>
-      </main>
-    </div>
-  );
+
+        {/* Stats row */}
+        <div className="flex gap-2.5 relative">
+          {[
+            { label: 'Win Rate', value: '78%', icon: '📈' },
+            { label: "Today's Matches", value: `${matches.length}`, icon: '📅' },
+            { label: 'Your Plan', value: 'PRO', icon: '⭐' },
+          ].map(s => (
+            <div key={s.label} className="flex-1 rounded-2xl px-3 py-3"
+              style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">{s.label}</p>
+              <p className="font-black text-lg text-white leading-none font-display">{s.value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Filter pills */}
+      <div className="px-5 pb-3">
+        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
+          {FILTERS.map(f => (
+            <button
+              key={f}
+              onClick={() => setActiveFilter(f)}
+              className="px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
+              style={activeFilter === f ? {
+                background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+                color: '#fff',
+                boxShadow: '0 0 16px rgba(34,197,94,0.3)',
+              } : {
+                background: '#111118',
+                color: '#4b5563',
+                border: '1px solid rgba(255,255,255,0.06)',
+              }}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Divider */}
+      <div className="mx-5 mb-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
+
+      {/* Match list */}
+      <div className="flex-1 px-5 pb-28 space-y-3 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+
+        {loading && (
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-30 rounded-2xl animate-pulse"
+                style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.04)' }} />
+            ))}
+          </div>
+        )}
+
+        {!loading && filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+              style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
+              ⚽
+            </div>
+            <div className="text-center">
+              <p className="text-white font-bold mb-1">No matches today</p>
+              <p className="text-slate-500 text-xs">Check back later for predictions</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold">
+                Today's Predictions
+              </span>
+              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
+              <span className="text-[10px] text-green-500 font-bold">{filtered.length} matches</span>
+            </div>
+            {filtered.map(match => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </>
+        )}
+      </div>
+
+      <BottomNav active="home" />
+    </main>
+  )
 }
