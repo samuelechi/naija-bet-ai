@@ -34,27 +34,67 @@ export interface H2HResult {
 
 export type FormResult = 'W' | 'D' | 'L'
 
+// ─── Individual prediction market ────────────────────────────────────────────
+export interface MarketPrediction {
+    pick: string
+    confidence: number
+    odds: string
+    reasoning: string
+}
+
+export interface OverUnderPrediction extends MarketPrediction {
+    line: '0.5' | '1.5' | '2.5' | '3.5'
+}
+
+// ─── Best bet ────────────────────────────────────────────────────────────────
+export interface BestBet {
+    type: '1X2' | 'BTTS' | 'Over/Under' | 'Double Chance' | 'Correct Score' | 'HT/FT' | 'Asian Handicap' | 'First Goal' | 'Clean Sheet'
+    pick: string
+    confidence: number
+    odds: string
+    reasoning: string
+}
+
+// ─── Full prediction ──────────────────────────────────────────────────────────
 export interface Prediction {
     matchId: number
+
+    // Match outcome probabilities
     homeWinPct: number
     drawPct: number
     awayWinPct: number
-    verdict: string
-    confidence: number
-    bestBet: string
-    bestBetOdds: string
-    riskLevel: 'LOW' | 'MEDIUM' | 'HIGH'
-    riskReason: string
-    btts: number
-    over25: number
-    over15: number
-    under25: number
-    cleanSheet: number
-    firstGoal: 'HOME' | 'AWAY' | 'EITHER'
+
+    // Expected goals
     xgHome: number
     xgAway: number
+
+    // Risk
+    riskLevel: 'Low' | 'Medium' | 'High'
+    riskReason: string
+
+    // Summary
+    summary: string
+
+    // Analysis
     keyFactors: KeyFactor[]
-    bestBetReason: string
+
+    // Best single pick
+    bestBet: BestBet
+
+    // All 9 markets
+    predictions: {
+        '1X2': MarketPrediction
+        'BTTS': MarketPrediction
+        'Over/Under': OverUnderPrediction
+        'Double Chance': MarketPrediction
+        'Correct Score': MarketPrediction
+        'HT/FT': MarketPrediction
+        'Asian Handicap': MarketPrediction
+        'First Goal': MarketPrediction
+        'Clean Sheet': MarketPrediction
+    }
+
+    // Match context
     homeForm: FormResult[]
     awayForm: FormResult[]
     h2h: H2HResult[]

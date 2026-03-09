@@ -38,57 +38,102 @@ Return ONLY this JSON, no markdown:
   "homeWinPct": <0-100>,
   "drawPct": <0-100>,
   "awayWinPct": <0-100>,
-  "verdict": "<e.g. Arsenal Win | Draw | Over 1.5 Goals>",
-  "confidence": <0-100>,
-  "bestBet": "<the single safest bet from the list below>",
-  "bestBetOdds": "<e.g. @1.72>",
-  "riskLevel": "<LOW|MEDIUM|HIGH>",
-  "riskReason": "<one sentence>",
-  "btts": <0-100>,
-  "over25": <0-100>,
-  "over15": <0-100>,
-  "under25": <0-100>,
-  "cleanSheet": <0-100>,
-  "firstGoal": "<HOME|AWAY|EITHER>",
   "xgHome": <e.g. 1.84>,
   "xgAway": <e.g. 0.92>,
+  "riskLevel": "<Low|Medium|High>",
+  "riskReason": "<one sentence>",
+  "summary": "<2-3 sentence match overview for bettors>",
   "keyFactors": [
     { "icon": "<emoji>", "text": "<max 50 chars>", "type": "<positive|negative|neutral>" },
     { "icon": "<emoji>", "text": "<max 50 chars>", "type": "<positive|negative|neutral>" },
     { "icon": "<emoji>", "text": "<max 50 chars>", "type": "<positive|negative|neutral>" },
     { "icon": "<emoji>", "text": "<max 50 chars>", "type": "<positive|negative|neutral>" }
   ],
-  "bestBetReason": "<2-3 sentences>"
+  "bestBet": {
+    "type": "<1X2|BTTS|Over/Under|Double Chance|Correct Score|HT/FT|Asian Handicap|First Goal|Clean Sheet>",
+    "pick": "<your pick>",
+    "confidence": <0-100>,
+    "odds": "<e.g. 1.75>",
+    "reasoning": "<1-2 sentence sharp reasoning>"
+  },
+  "predictions": {
+    "1X2": {
+      "pick": "<${match.homeTeam.shortName} Win|Draw|${match.awayTeam.shortName} Win>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 2.10>",
+      "reasoning": "<sharp 1-2 sentence reasoning>"
+    },
+    "BTTS": {
+      "pick": "<Yes|No>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 1.80>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "Over/Under": {
+      "line": "<0.5|1.5|2.5|3.5>",
+      "pick": "<Over|Under>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 1.90>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "Double Chance": {
+      "pick": "<${match.homeTeam.shortName}/Draw|${match.awayTeam.shortName}/Draw|${match.homeTeam.shortName}/${match.awayTeam.shortName}>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 1.40>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "Correct Score": {
+      "pick": "<e.g. 2-1>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 7.50>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "HT/FT": {
+      "pick": "<e.g. Home/Home|Draw/Home|Away/Away>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 3.20>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "Asian Handicap": {
+      "pick": "<e.g. ${match.homeTeam.shortName} -0.5|${match.awayTeam.shortName} +1>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 1.95>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "First Goal": {
+      "pick": "<Home|Away|No Goal>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 1.65>",
+      "reasoning": "<sharp reasoning>"
+    },
+    "Clean Sheet": {
+      "pick": "<Home|Away|Neither>",
+      "confidence": <0-100>,
+      "odds": "<e.g. 2.30>",
+      "reasoning": "<sharp reasoning>"
+    }
+  }
 }
-
-BEST BET SELECTION RULES (pick ONE, prioritise safety):
-- If over15 >= 75%: bestBet = "Over 1.5 Goals"
-- Else if btts >= 65%: bestBet = "Both Teams to Score"
-- Else if over25 >= 65%: bestBet = "Over 2.5 Goals"
-- Else if homeWinPct >= 70%: bestBet = "${match.homeTeam.name} Win"
-- Else if awayWinPct >= 70%: bestBet = "${match.awayTeam.name} Win"
-- Else if (homeWinPct + drawPct) >= 75%: bestBet = "${match.homeTeam.name} or Draw (Double Chance)"
-- Else if (awayWinPct + drawPct) >= 75%: bestBet = "${match.awayTeam.name} or Draw (Double Chance)"
-- Else if under25 >= 65%: bestBet = "Under 2.5 Goals"
-- Else: bestBet = "No Value Bet — Skip This Match"
-
-VERDICT RULES:
-- verdict = the most likely outcome: "${match.homeTeam.name} Win", "Draw", or "${match.awayTeam.name} Win"
 
 Rules:
 - homeWinPct + drawPct + awayWinPct = exactly 100
 - keyFactors must have exactly 4 items
 - All percentages are whole numbers
-- xG has 2 decimal places`
+- xG has 2 decimal places
+- bestBet must be the single strongest pick across ALL prediction types
+- confidence scores must be realistic: 60-85 for most; Correct Score rarely above 30; HT/FT rarely above 40
+- Over/Under: pick the line with highest confidence, not always 2.5
+- riskLevel: Low if bestBet confidence > 75, Medium if 60-75, High if below 60
+- Odds are fair market estimates, not inflated bookmaker odds`
 
     const message = await client.messages.create({
         model: 'claude-opus-4-6',
-        max_tokens: 1024,
-        system: `You are an expert football analyst. 
-Always respond with valid JSON only. 
-No markdown, no extra text.
-Be realistic and unbiased in predictions.
-Prioritise safe, high-probability bets over risky outright winners.`,
+        max_tokens: 1500,
+        system: `You are NaijaBetAI, an expert football analyst and betting predictions engine.
+Always respond with valid JSON only.
+No markdown, no extra text, no preamble.
+Be realistic and unbiased in all predictions.
+Prioritise safe, high-probability bets for Nigerian sports bettors.`,
         messages: [{ role: 'user', content: prompt }],
     })
 
@@ -99,6 +144,7 @@ Prioritise safe, high-probability bets over risky outright winners.`,
         .replace(/```json/g, '')
         .replace(/```/g, '')
         .trim()
+
     const parsed = JSON.parse(cleaned)
 
     return {

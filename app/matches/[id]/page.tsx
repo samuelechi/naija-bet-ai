@@ -2,10 +2,110 @@
 export const dynamic = 'force-static'
 import { useState, useEffect } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
-import { Match, Prediction } from '@/types'
+import { Match } from '@/types'
 import BottomNav from '@/components/layout/BottomNav'
 import { supabase } from '@/lib/supabase'
 
+// ─── New prediction shape (matches PREDICTION_SYSTEM_PROMPT output) ───────────
+interface FullPrediction {
+    bestBet: {
+        type: string
+        pick: string
+        confidence: number
+        odds: string
+        reasoning: string
+    }
+    predictions: {
+        '1X2': { pick: string; confidence: number; odds: string; reasoning: string }
+        'BTTS': { pick: string; confidence: number; odds: string; reasoning: string }
+        'Over/Under': { line: string; pick: string; confidence: number; odds: string; reasoning: string }
+        'Double Chance': { pick: string; confidence: number; odds: string; reasoning: string }
+        'Correct Score': { pick: string; confidence: number; odds: string; reasoning: string }
+        'HT/FT': { pick: string; confidence: number; odds: string; reasoning: string }
+        'Asian Handicap': { pick: string; confidence: number; odds: string; reasoning: string }
+        'First Goal': { pick: string; confidence: number; odds: string; reasoning: string }
+        'Clean Sheet': { pick: string; confidence: number; odds: string; reasoning: string }
+    }
+    summary: string
+    riskLevel: 'Low' | 'Medium' | 'High'
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function ConfidenceBar({ value, color = '#22c55e' }: { value: number; color?: string }) {
+    return (
+        <div className="mt-2">
+            <div className="flex justify-between mb-1">
+                <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Confidence</span>
+                <span className="text-[10px] font-black" style={{ color }}>{value}%</span>
+            </div>
+            <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${value}%`, background: `linear-gradient(90deg, ${color}99, ${color})` }} />
+            </div>
+        </div>
+    )
+}
+
+function PredictionTile({
+    emoji, label, pick, odds, confidence, reasoning, isPro, userIsPro
+}: {
+    emoji: string; label: string; pick: string; odds: string
+    confidence: number; reasoning: string; isPro?: boolean; userIsPro: boolean
+}) {
+    const [expanded, setExpanded] = useState(false)
+    const locked = isPro && !userIsPro
+    const barColor = confidence >= 75 ? '#22c55e' : confidence >= 60 ? '#fbbf24' : '#f87171'
+
+    return (
+        <div
+            onClick={() => !locked && setExpanded(e => !e)}
+            className="rounded-2xl p-4 transition-all duration-200 relative overflow-hidden"
+            style={{
+                background: expanded ? '#13132A' : '#111118',
+                border: `1px solid ${expanded ? 'rgba(124,92,252,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                cursor: locked ? 'default' : 'pointer',
+                opacity: locked ? 0.5 : 1,
+            }}>
+            {locked && (
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl z-10"
+                    style={{ background: 'rgba(10,10,15,0.85)' }}>
+                    <span className="text-slate-500 text-xs font-bold">🔒 Pro Only</span>
+                </div>
+            )}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <span className="text-lg">{emoji}</span>
+                    <div>
+                        <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">{label}</p>
+                        <p className="text-white text-sm font-black mt-0.5">{pick}</p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Est. Odds</p>
+                    <p className="text-green-400 text-lg font-black">{odds}</p>
+                </div>
+            </div>
+            <ConfidenceBar value={confidence} color={barColor} />
+            {expanded && (
+                <p className="text-slate-400 text-[11px] leading-relaxed mt-3 pt-3"
+                    style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                    {reasoning}
+                </p>
+            )}
+        </div>
+    )
+}
+
+function Card({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <div className="rounded-2xl p-4" style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <p className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold mb-3">{label}</p>
+            {children}
+        </div>
+    )
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function MatchDetailPage() {
     const params = useParams()
     const router = useRouter()
@@ -13,10 +113,12 @@ export default function MatchDetailPage() {
     const matchId = params.id as string
 
     const [match, setMatch] = useState<Match | null>(null)
-    const [prediction, setPrediction] = useState<Prediction | null>(null)
+    const [prediction, setPrediction] = useState<FullPrediction | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [isLocked, setIsLocked] = useState(false)
+    const [userIsPro, setUserIsPro] = useState(false)
+    const [activeTab, setActiveTab] = useState<'top' | 'all'>('top')
 
     useEffect(() => {
         const matchData = searchParams.get('match')
@@ -33,6 +135,15 @@ export default function MatchDetailPage() {
             if (!matchObj) { setError('Match data missing'); return }
 
             const { data: { session } } = await supabase.auth.getSession()
+
+            // Check if user is pro
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', session?.user?.id)
+                .single()
+            if (profile?.plan === 'pro') setUserIsPro(true)
+
             const res = await fetch(`/api/predictions/${matchId}`, {
                 method: 'POST',
                 headers: {
@@ -53,6 +164,7 @@ export default function MatchDetailPage() {
         }
     }
 
+    // ── Loading ──
     if (loading) {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center gap-5"
@@ -72,6 +184,7 @@ export default function MatchDetailPage() {
         )
     }
 
+    // ── Error ──
     if (error) {
         return (
             <div className="flex flex-col min-h-screen items-center justify-center gap-4 px-6"
@@ -97,9 +210,8 @@ export default function MatchDetailPage() {
     return (
         <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
 
-            {/* Match header */}
+            {/* ── Match Header ── */}
             <div className="relative pt-14 pb-6 px-5 overflow-hidden">
-                {/* Glow */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-44 rounded-full blur-3xl pointer-events-none"
                     style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.14) 0%, transparent 70%)' }} />
 
@@ -112,7 +224,6 @@ export default function MatchDetailPage() {
 
                 {match && (
                     <div className="relative">
-                        {/* League badge */}
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full mb-5"
                             style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
                             <span className="text-green-400 text-[9px] font-black uppercase tracking-[0.15em]">
@@ -120,15 +231,13 @@ export default function MatchDetailPage() {
                             </span>
                         </div>
 
-                        {/* Teams */}
                         <div className="flex items-center justify-between">
                             <div className="flex flex-col items-center gap-2 w-[38%]">
                                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center p-2"
                                     style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)' }}>
                                     {match.homeTeam.crest
                                         ? <img src={match.homeTeam.crest} className="w-full h-full object-contain" alt="" />
-                                        : <span className="text-2xl">⚽</span>
-                                    }
+                                        : <span className="text-2xl">⚽</span>}
                                 </div>
                                 <span className="text-white text-xs font-bold text-center leading-tight">{match.homeTeam.shortName}</span>
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Home</span>
@@ -147,8 +256,7 @@ export default function MatchDetailPage() {
                                     style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)' }}>
                                     {match.awayTeam.crest
                                         ? <img src={match.awayTeam.crest} className="w-full h-full object-contain" alt="" />
-                                        : <span className="text-2xl">⚽</span>
-                                    }
+                                        : <span className="text-2xl">⚽</span>}
                                 </div>
                                 <span className="text-white text-xs font-bold text-center leading-tight">{match.awayTeam.shortName}</span>
                                 <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider">Away</span>
@@ -161,260 +269,236 @@ export default function MatchDetailPage() {
             {/* Divider */}
             <div className="mx-5 mb-4 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
 
-            {/* LOCKED STATE */}
+            {/* ── Locked State ── */}
             {isLocked && (
                 <div className="flex-1 flex flex-col px-5 pb-28">
-                    {/* Blurred preview */}
                     <div className="space-y-3 pointer-events-none select-none mb-4" style={{ filter: 'blur(6px)', opacity: 0.3 }}>
-                        {['📊 Outcome Probabilities', '🤖 AI Verdict', '⚽ Goal Markets', '📐 Expected Goals (xG)'].map(label => (
+                        {['⚡ Best Bet', '📊 Match Result (1X2)', '⚽ Goal Markets', '🎯 Correct Score'].map(label => (
                             <div key={label} className="h-20 rounded-2xl flex items-center px-4"
                                 style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
                                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">{label}</p>
                             </div>
                         ))}
                     </div>
-
-                    {/* Lock card */}
                     <div className="rounded-2xl p-6 flex flex-col items-center gap-4 text-center"
-                        style={{
-                            background: '#111118',
-                            border: '1px solid rgba(34,197,94,0.2)',
-                            boxShadow: '0 0 40px rgba(22,163,74,0.12)',
-                        }}>
+                        style={{ background: '#111118', border: '1px solid rgba(34,197,94,0.2)', boxShadow: '0 0 40px rgba(22,163,74,0.12)' }}>
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl"
                             style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
                             🔒
                         </div>
                         <div>
-                            <p className="text-white font-black text-lg font-display">Pro Prediction Locked</p>
+                            <p className="text-white font-black text-lg">Pro Prediction Locked</p>
                             <p className="text-slate-500 text-xs mt-2 leading-relaxed">
-                                Upgrade to <span className="text-green-400 font-bold">NaijaBetAI Pro</span> to unlock full AI analysis, goal markets, xG, form & best bets.
+                                Upgrade to <span className="text-green-400 font-bold">NaijaBetAI Pro</span> to unlock all 9 AI markets including Correct Score, Asian Handicap, HT/FT & more.
                             </p>
                         </div>
-                        <button
-                            onClick={() => router.push('/subscribe')}
+                        <button onClick={() => router.push('/subscribe')}
                             className="w-full font-black text-sm py-3.5 rounded-xl text-white active:scale-95 transition-all"
-                            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)', boxShadow: '0 0 20px rgba(34,197,94,0.2)' }}
-                        >
+                            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)', boxShadow: '0 0 20px rgba(34,197,94,0.2)' }}>
                             Upgrade to Pro →
                         </button>
-                        <button onClick={() => router.back()} className="text-slate-600 text-xs">
-                            Maybe later
-                        </button>
+                        <button onClick={() => router.back()} className="text-slate-600 text-xs">Maybe later</button>
                     </div>
                 </div>
             )}
 
-            {/* PRO CONTENT */}
+            {/* ── Prediction Content ── */}
             {!isLocked && prediction && (
                 <div className="flex-1 overflow-y-auto px-5 pb-28 space-y-3" style={{ scrollbarWidth: 'none' }}>
 
-                    {/* Outcome Probabilities */}
-                    <Card label="📊 Outcome Probabilities">
-                        <div className="flex gap-2 mb-3">
-                            {[
-                                { label: 'Home Win', pct: prediction.homeWinPct, team: match?.homeTeam.shortName, color: '#4ade80', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' },
-                                { label: 'Draw', pct: prediction.drawPct, team: 'Both', color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.15)' },
-                                { label: 'Away Win', pct: prediction.awayWinPct, team: match?.awayTeam.shortName, color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)' },
-                            ].map(o => {
-                                const isTop = o.pct === Math.max(prediction.homeWinPct, prediction.drawPct, prediction.awayWinPct)
-                                return (
-                                    <div key={o.label} className="flex-1 rounded-xl p-3 flex flex-col items-center gap-1.5"
-                                        style={{ background: o.bg, border: `1px solid ${o.border}` }}>
-                                        <span className="text-[8px] text-slate-400 uppercase tracking-wider font-bold">{o.label}</span>
-                                        <span className="text-2xl font-black font-display" style={{ color: o.color }}>{o.pct}%</span>
-                                        <span className="text-[8px] text-slate-500 truncate w-full text-center">{o.team}</span>
-                                        {isTop && (
-                                            <span className="text-[8px] font-black px-1.5 py-0.5 rounded-md text-white"
-                                                style={{ background: 'rgba(34,197,94,0.3)' }}>AI Pick ✓</span>
-                                        )}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                        {/* Probability bar */}
-                        <div className="flex h-1.5 rounded-full overflow-hidden gap-0.5">
-                            <div className="rounded-full bg-green-400" style={{ flex: prediction.homeWinPct }} />
-                            <div className="rounded-full bg-slate-500" style={{ flex: prediction.drawPct }} />
-                            <div className="rounded-full bg-blue-400" style={{ flex: prediction.awayWinPct }} />
-                        </div>
-                    </Card>
-
-                    {/* AI Verdict */}
-                    <Card label="🤖 AI Verdict">
-                        <div className="rounded-xl p-4"
-                            style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
-                            <div className="flex items-center justify-between mb-3">
-                                <div>
-                                    <p className="text-slate-500 text-[9px] uppercase tracking-wider font-bold mb-1">Best Bet</p>
-                                    <p className="text-white font-black text-sm font-display">{prediction.verdict}</p>
-                                </div>
-                                <div className="flex flex-col items-end gap-1">
-                                    <span className="text-[9px] text-slate-500 uppercase tracking-wider font-bold">Confidence</span>
-                                    <span className="text-green-400 text-2xl font-black font-display">{prediction.confidence}%</span>
-                                </div>
-                            </div>
-                            <div className="h-1.5 rounded-full overflow-hidden"
-                                style={{ background: 'rgba(255,255,255,0.08)' }}>
-                                <div className="h-full rounded-full"
-                                    style={{ width: `${prediction.confidence}%`, background: 'linear-gradient(90deg, #16a34a, #4ade80)' }} />
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Goal Markets */}
-                    <Card label="⚽ Goal Markets">
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { label: 'BTTS', value: `${prediction.btts}%` },
-                                { label: 'Over 2.5', value: `${prediction.over25}%` },
-                                { label: 'Over 1.5', value: `${prediction.over15}%` },
-                                { label: 'Under 2.5', value: `${prediction.under25}%` },
-                                { label: 'Clean Sheet', value: `${prediction.cleanSheet}%` },
-                                { label: '1st Goal', value: prediction.firstGoal },
-                            ].map(m => (
-                                <div key={m.label} className="rounded-xl p-2.5 flex flex-col items-center gap-1.5"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <span className="text-[8px] text-slate-500 uppercase tracking-wider font-bold text-center">{m.label}</span>
-                                    <span className="text-white text-sm font-black font-display">{m.value}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    {/* xG */}
-                    <Card label="📐 Expected Goals (xG)">
-                        <div className="flex items-center justify-between px-2">
-                            <div>
-                                <p className="text-slate-500 text-[9px] uppercase tracking-wider font-bold mb-1">{match?.homeTeam.shortName}</p>
-                                <span className="text-green-400 text-3xl font-black font-display">{prediction.xgHome}</span>
-                            </div>
-                            <div className="text-slate-700 font-black text-sm">xG</div>
-                            <div className="text-right">
-                                <p className="text-slate-500 text-[9px] uppercase tracking-wider font-bold mb-1">{match?.awayTeam.shortName}</p>
-                                <span className="text-blue-400 text-3xl font-black font-display">{prediction.xgAway}</span>
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* Risk */}
-                    <Card label="⚠️ Risk Rating">
-                        <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                                <p className="text-white text-sm font-bold mb-1">{prediction.riskLevel} Risk</p>
-                                <p className="text-slate-500 text-[11px] leading-relaxed">{prediction.riskReason}</p>
-                            </div>
-                            <span className="ml-4 text-xs font-black px-3 py-1.5 rounded-xl shrink-0"
-                                style={prediction.riskLevel === 'LOW'
-                                    ? { color: '#4ade80', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)' }
-                                    : prediction.riskLevel === 'MEDIUM'
-                                        ? { color: '#fbbf24', background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.2)' }
-                                        : { color: '#f87171', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)' }
-                                }>
-                                {prediction.riskLevel}
+                    {/* Best Bet Banner */}
+                    <div className="rounded-2xl p-5 overflow-hidden relative"
+                        style={{ background: 'linear-gradient(135deg, #16a34a, #15803d)', boxShadow: '0 0 30px rgba(22,163,74,0.25)' }}>
+                        <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl"
+                            style={{ background: 'rgba(255,255,255,0.08)' }} />
+                        <p className="text-green-200/70 text-[9px] font-black uppercase tracking-[0.2em] mb-1">⚡ Best Bet</p>
+                        <p className="text-white font-black text-xl mb-1">
+                            {prediction.bestBet.type}: {prediction.bestBet.pick}
+                        </p>
+                        <p className="text-green-100/70 text-[11px] leading-relaxed mb-4">{prediction.bestBet.reasoning}</p>
+                        <div className="flex gap-2 flex-wrap">
+                            <span className="text-xs font-black px-3 py-1.5 rounded-xl text-white"
+                                style={{ background: 'rgba(0,0,0,0.25)' }}>
+                                Odds: {prediction.bestBet.odds}
+                            </span>
+                            <span className="text-xs font-black px-3 py-1.5 rounded-xl text-white"
+                                style={{ background: 'rgba(0,0,0,0.25)' }}>
+                                {prediction.bestBet.confidence}% Confidence
+                            </span>
+                            <span className="text-xs font-black px-3 py-1.5 rounded-xl"
+                                style={{
+                                    background: 'rgba(0,0,0,0.25)',
+                                    color: prediction.riskLevel === 'Low' ? '#4ade80' : prediction.riskLevel === 'Medium' ? '#fbbf24' : '#f87171'
+                                }}>
+                                {prediction.riskLevel} Risk
                             </span>
                         </div>
+                    </div>
+
+                    {/* Match Summary */}
+                    <Card label="🤖 AI Match Summary">
+                        <p className="text-slate-300 text-xs leading-relaxed">{prediction.summary}</p>
                     </Card>
 
-                    {/* Key Factors */}
-                    <Card label="🔍 Key Factors">
-                        <div className="space-y-2">
-                            {prediction.keyFactors.map((f, i) => (
-                                <div key={i} className="flex items-start gap-3 rounded-xl px-3 py-2.5"
-                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                    <span className="text-sm mt-0.5">{f.icon}</span>
-                                    <span className="text-slate-300 text-xs flex-1 leading-relaxed">{f.text}</span>
-                                    <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0"
-                                        style={f.type === 'positive'
-                                            ? { color: '#4ade80', background: 'rgba(34,197,94,0.1)' }
-                                            : f.type === 'negative'
-                                                ? { color: '#f87171', background: 'rgba(239,68,68,0.1)' }
-                                                : { color: '#94a3b8', background: 'rgba(148,163,184,0.1)' }}>
-                                        {f.type === 'positive' ? '+' : f.type === 'negative' ? '–' : '~'}
-                                    </span>
+                    {/* Tabs */}
+                    <div className="flex gap-2">
+                        {(['top', 'all'] as const).map(tab => (
+                            <button key={tab} onClick={() => setActiveTab(tab)}
+                                className="px-4 py-2 rounded-full text-xs font-bold transition-all"
+                                style={{
+                                    background: activeTab === tab ? '#22c55e' : '#111118',
+                                    color: activeTab === tab ? '#000' : '#64748b',
+                                    border: `1px solid ${activeTab === tab ? '#22c55e' : 'rgba(255,255,255,0.06)'}`,
+                                }}>
+                                {tab === 'top' ? '🔥 Top Picks' : '📋 All Markets'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Top Picks Tab */}
+                    {activeTab === 'top' && (
+                        <>
+                            <PredictionTile
+                                emoji="🏆" label="Match Result (1X2)"
+                                pick={prediction.predictions['1X2'].pick}
+                                odds={prediction.predictions['1X2'].odds}
+                                confidence={prediction.predictions['1X2'].confidence}
+                                reasoning={prediction.predictions['1X2'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="⚽" label="Both Teams To Score"
+                                pick={`BTTS: ${prediction.predictions['BTTS'].pick}`}
+                                odds={prediction.predictions['BTTS'].odds}
+                                confidence={prediction.predictions['BTTS'].confidence}
+                                reasoning={prediction.predictions['BTTS'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="📊" label="Over / Under Goals"
+                                pick={`${prediction.predictions['Over/Under'].pick} ${prediction.predictions['Over/Under'].line}`}
+                                odds={prediction.predictions['Over/Under'].odds}
+                                confidence={prediction.predictions['Over/Under'].confidence}
+                                reasoning={prediction.predictions['Over/Under'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="🛡️" label="Double Chance"
+                                pick={prediction.predictions['Double Chance'].pick}
+                                odds={prediction.predictions['Double Chance'].odds}
+                                confidence={prediction.predictions['Double Chance'].confidence}
+                                reasoning={prediction.predictions['Double Chance'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="🚀" label="First Goal"
+                                pick={`${prediction.predictions['First Goal'].pick} scores first`}
+                                odds={prediction.predictions['First Goal'].odds}
+                                confidence={prediction.predictions['First Goal'].confidence}
+                                reasoning={prediction.predictions['First Goal'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                        </>
+                    )}
+
+                    {/* All Markets Tab */}
+                    {activeTab === 'all' && (
+                        <>
+                            <PredictionTile
+                                emoji="🏆" label="Match Result (1X2)"
+                                pick={prediction.predictions['1X2'].pick}
+                                odds={prediction.predictions['1X2'].odds}
+                                confidence={prediction.predictions['1X2'].confidence}
+                                reasoning={prediction.predictions['1X2'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="⚽" label="Both Teams To Score"
+                                pick={`BTTS: ${prediction.predictions['BTTS'].pick}`}
+                                odds={prediction.predictions['BTTS'].odds}
+                                confidence={prediction.predictions['BTTS'].confidence}
+                                reasoning={prediction.predictions['BTTS'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="📊" label="Over / Under Goals"
+                                pick={`${prediction.predictions['Over/Under'].pick} ${prediction.predictions['Over/Under'].line}`}
+                                odds={prediction.predictions['Over/Under'].odds}
+                                confidence={prediction.predictions['Over/Under'].confidence}
+                                reasoning={prediction.predictions['Over/Under'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="🛡️" label="Double Chance"
+                                pick={prediction.predictions['Double Chance'].pick}
+                                odds={prediction.predictions['Double Chance'].odds}
+                                confidence={prediction.predictions['Double Chance'].confidence}
+                                reasoning={prediction.predictions['Double Chance'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="🚀" label="First Goal"
+                                pick={`${prediction.predictions['First Goal'].pick} scores first`}
+                                odds={prediction.predictions['First Goal'].odds}
+                                confidence={prediction.predictions['First Goal'].confidence}
+                                reasoning={prediction.predictions['First Goal'].reasoning}
+                                userIsPro={userIsPro}
+                            />
+                            {/* PRO ONLY BELOW */}
+                            <PredictionTile
+                                emoji="🎯" label="Correct Score"
+                                pick={prediction.predictions['Correct Score'].pick}
+                                odds={prediction.predictions['Correct Score'].odds}
+                                confidence={prediction.predictions['Correct Score'].confidence}
+                                reasoning={prediction.predictions['Correct Score'].reasoning}
+                                isPro userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="⏱️" label="Half-Time / Full-Time"
+                                pick={prediction.predictions['HT/FT'].pick}
+                                odds={prediction.predictions['HT/FT'].odds}
+                                confidence={prediction.predictions['HT/FT'].confidence}
+                                reasoning={prediction.predictions['HT/FT'].reasoning}
+                                isPro userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="⚖️" label="Asian Handicap"
+                                pick={prediction.predictions['Asian Handicap'].pick}
+                                odds={prediction.predictions['Asian Handicap'].odds}
+                                confidence={prediction.predictions['Asian Handicap'].confidence}
+                                reasoning={prediction.predictions['Asian Handicap'].reasoning}
+                                isPro userIsPro={userIsPro}
+                            />
+                            <PredictionTile
+                                emoji="🧤" label="Clean Sheet"
+                                pick={`${prediction.predictions['Clean Sheet'].pick} keeps clean sheet`}
+                                odds={prediction.predictions['Clean Sheet'].odds}
+                                confidence={prediction.predictions['Clean Sheet'].confidence}
+                                reasoning={prediction.predictions['Clean Sheet'].reasoning}
+                                isPro userIsPro={userIsPro}
+                            />
+
+                            {/* Pro upsell if not pro */}
+                            {!userIsPro && (
+                                <div className="rounded-2xl p-5 flex flex-col items-center gap-3 text-center"
+                                    style={{ background: '#111118', border: '1px solid rgba(34,197,94,0.2)' }}>
+                                    <p className="text-white font-black text-sm">🔒 Unlock Pro Markets</p>
+                                    <p className="text-slate-500 text-xs leading-relaxed">
+                                        Correct Score, HT/FT, Asian Handicap & Clean Sheet are Pro-only predictions
+                                    </p>
+                                    <button onClick={() => router.push('/subscribe')}
+                                        className="w-full font-black text-sm py-3 rounded-xl text-white active:scale-95 transition-all"
+                                        style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
+                                        Upgrade to Pro →
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    {/* Best Bet */}
-                    <Card label="💡 AI Best Bet">
-                        <div className="rounded-xl p-4"
-                            style={{ background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.15)' }}>
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-amber-400/70 text-[9px] font-black uppercase tracking-wider">⭐ Recommended</span>
-                                <span className="text-amber-400 text-2xl font-black font-display">{prediction.bestBetOdds}</span>
-                            </div>
-                            <p className="text-white font-bold text-sm mb-2">{prediction.bestBet}</p>
-                            <p className="text-slate-400 text-[11px] leading-relaxed">{prediction.bestBetReason}</p>
-                        </div>
-                    </Card>
-
-                    {/* Recent Form */}
-                    <Card label="📈 Recent Form">
-                        <div className="space-y-3">
-                            {[
-                                { name: match?.homeTeam.shortName, form: prediction.homeForm },
-                                { name: match?.awayTeam.shortName, form: prediction.awayForm },
-                            ].map(({ name, form }) => (
-                                <div key={name} className="flex items-center justify-between">
-                                    <span className="text-slate-500 text-[10px] w-16 truncate font-medium">{name}</span>
-                                    <div className="flex gap-1.5">
-                                        {form.map((r, i) => (
-                                            <div key={i} className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black text-white"
-                                                style={{
-                                                    background: r === 'W' ? '#16a34a' : r === 'D' ? '#374151' : '#dc2626',
-                                                    border: `1px solid ${r === 'W' ? 'rgba(34,197,94,0.3)' : r === 'D' ? 'rgba(255,255,255,0.08)' : 'rgba(239,68,68,0.3)'}`,
-                                                }}>
-                                                {r}
-                                            </div>
-                                        ))}
-                                        {form.length === 0 && <span className="text-slate-600 text-[10px]">No data</span>}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </Card>
-
-                    {/* H2H */}
-                    <Card label="⚔️ Head to Head">
-                        {prediction.h2h.length === 0 ? (
-                            <p className="text-slate-600 text-xs">No H2H data available</p>
-                        ) : (
-                            <div className="space-y-0">
-                                {prediction.h2h.map((g, i) => (
-                                    <div key={i} className={`flex items-center justify-between py-2.5 ${i < prediction.h2h.length - 1 ? 'border-b' : ''
-                                        }`} style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                                        <span className="text-slate-600 text-[9px] w-10">{g.date}</span>
-                                        <span className="text-white text-xs font-bold flex-1 text-center">
-                                            {g.homeTeam} {g.homeScore}–{g.awayScore} {g.awayTeam}
-                                        </span>
-                                        <span className="text-[9px] font-black px-2 py-0.5 rounded-lg"
-                                            style={g.result === 'W'
-                                                ? { color: '#4ade80', background: 'rgba(34,197,94,0.1)' }
-                                                : g.result === 'D'
-                                                    ? { color: '#94a3b8', background: 'rgba(148,163,184,0.1)' }
-                                                    : { color: '#f87171', background: 'rgba(239,68,68,0.1)' }}>
-                                            {g.result}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </Card>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
 
             <BottomNav active="home" />
         </main>
-    )
-}
-
-function Card({ label, children }: { label: string; children: React.ReactNode }) {
-    return (
-        <div className="rounded-2xl p-4" style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
-            <p className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold mb-3">{label}</p>
-            {children}
-        </div>
     )
 }

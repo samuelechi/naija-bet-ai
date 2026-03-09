@@ -5,6 +5,8 @@ const config: CapacitorConfig = {
   appName: 'NaijaBetAI',
   webDir: 'out',
   server: {
+    url: 'https://naija-bet-ai.vercel.app',
+    cleartext: true,
     androidScheme: 'https',
   },
   android: {
