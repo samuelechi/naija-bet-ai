@@ -34,7 +34,6 @@ export interface H2HResult {
 
 export type FormResult = 'W' | 'D' | 'L'
 
-// ─── Individual prediction market ────────────────────────────────────────────
 export interface MarketPrediction {
     pick: string
     confidence: number
@@ -46,42 +45,41 @@ export interface OverUnderPrediction extends MarketPrediction {
     line: '0.5' | '1.5' | '2.5' | '3.5'
 }
 
-// ─── Best bet ────────────────────────────────────────────────────────────────
 export interface BestBet {
-    type: '1X2' | 'BTTS' | 'Over/Under' | 'Double Chance' | 'Correct Score' | 'HT/FT' | 'Asian Handicap' | 'First Goal' | 'Clean Sheet'
+    type:
+    | '1X2'
+    | 'BTTS'
+    | 'Over/Under'
+    | 'Double Chance'
+    | 'Correct Score'
+    | 'HT/FT'
+    | 'Asian Handicap'
+    | 'First Goal'
+    | 'Clean Sheet'
+    | 'Draw No Bet'
+    | 'BTTS & Win'
+    | 'Odd/Even Goals'
+    | 'Multi-Goals'
+    | 'Both Halves Over 0.5'
+    | 'Win to Nil'
     pick: string
     confidence: number
     odds: string
     reasoning: string
 }
 
-// ─── Full prediction ──────────────────────────────────────────────────────────
 export interface Prediction {
     matchId: number
-
-    // Match outcome probabilities
     homeWinPct: number
     drawPct: number
     awayWinPct: number
-
-    // Expected goals
     xgHome: number
     xgAway: number
-
-    // Risk
     riskLevel: 'Low' | 'Medium' | 'High'
     riskReason: string
-
-    // Summary
     summary: string
-
-    // Analysis
     keyFactors: KeyFactor[]
-
-    // Best single pick
     bestBet: BestBet
-
-    // All 9 markets
     predictions: {
         '1X2': MarketPrediction
         'BTTS': MarketPrediction
@@ -92,9 +90,13 @@ export interface Prediction {
         'Asian Handicap': MarketPrediction
         'First Goal': MarketPrediction
         'Clean Sheet': MarketPrediction
+        'Draw No Bet': MarketPrediction
+        'BTTS & Win': MarketPrediction
+        'Odd/Even Goals': MarketPrediction
+        'Multi-Goals': MarketPrediction
+        'Both Halves Over 0.5': MarketPrediction
+        'Win to Nil': MarketPrediction
     }
-
-    // Match context
     homeForm: FormResult[]
     awayForm: FormResult[]
     h2h: H2HResult[]
