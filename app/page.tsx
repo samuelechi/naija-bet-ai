@@ -36,15 +36,17 @@ export default function Home() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('All')
+  const [winRate, setWinRate] = useState(0)
+  const [userPlan, setUserPlan] = useState('free')
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.push('/login')
-      } else {
-        // Don't use sessionStorage cache — always load fresh from Supabase
-        fetchMatches()
+        return
       }
+      fetchMatches()
+      loadUserStats(session.user.id)
     })
   }, [])
 
@@ -57,6 +59,29 @@ export default function Home() {
       console.error('Failed to fetch matches:', err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function loadUserStats(userId: string) {
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('plan')
+        .eq('id', userId)
+        .single()
+
+      const { data: predictions } = await supabase
+        .from('predictions')
+        .select('result')
+        .eq('user_id', userId)
+        .not('result', 'is', null)
+
+      const total = predictions?.length || 0
+      const won = predictions?.filter(p => p.result === 'WON').length || 0
+      setWinRate(total > 0 ? Math.round((won / total) * 100) : 0)
+      setUserPlan(profile?.plan || 'free')
+    } catch (e) {
+      console.error('Failed to load user stats:', e)
     }
   }
 
@@ -105,9 +130,9 @@ export default function Home() {
         {/* Stats row */}
         <div className="flex gap-2.5 relative">
           {[
-            { label: 'Win Rate', value: '78%', icon: '📈' },
-            { label: "Today's Matches", value: `${matches.length}`, icon: '📅' },
-            { label: 'Your Plan', value: 'PRO', icon: '⭐' },
+            { label: 'Win Rate', value: `${winRate}%` },
+            { label: "Today's Matches", value: `${matches.length}` },
+            { label: 'Your Plan', value: userPlan === 'pro' ? 'PRO' : 'FREE' },
           ].map(s => (
             <div key={s.label} className="flex-1 rounded-2xl px-3 py-3"
               style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
@@ -151,7 +176,7 @@ export default function Home() {
         {loading && (
           <div className="space-y-3">
             {[1, 2, 3].map(i => (
-              <div key={i} className="h-30 rounded-2xl animate-pulse"
+              <div key={i} className="h-28 rounded-2xl animate-pulse"
                 style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.04)' }} />
             ))}
           </div>

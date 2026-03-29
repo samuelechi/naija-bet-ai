@@ -5,25 +5,79 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import BottomNav from '@/components/layout/BottomNav'
 
-const ALL_LEAGUES = ['EPL', 'La Liga', 'Serie A', 'UCL', 'NPFL', 'Bundesliga']
+const ALL_LEAGUES = [
+    'EPL', 'La Liga', 'Serie A', 'UCL', 'UEL', 'NPFL',
+    'Bundesliga', 'Ligue 1', 'AFCON', 'CAF', 'Saudi', 'MLS', 'WSL'
+]
+
+interface Stats {
+    winRate: number
+    tipsUsed: number
+    streak: number
+    plan: string
+}
 
 export default function ProfilePage() {
     const router = useRouter()
     const [user, setUser] = useState<{ name: string; email: string } | null>(null)
+    const [stats, setStats] = useState<Stats>({ winRate: 0, tipsUsed: 0, streak: 0, plan: 'free' })
+    const [loading, setLoading] = useState(true)
     const [notifications, setNotifications] = useState(true)
     const [showLeagues, setShowLeagues] = useState(false)
     const [selectedLeagues, setSelectedLeagues] = useState<string[]>(['EPL', 'NPFL'])
 
     useEffect(() => {
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        supabase.auth.getSession().then(async ({ data: { session } }) => {
             if (!session) { router.push('/login'); return }
             const u = session.user
             setUser({
                 name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'User',
                 email: u.email || '',
             })
+            await loadStats(u.id)
         })
     }, [])
+
+    async function loadStats(userId: string) {
+        try {
+            // Get plan from profiles
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', userId)
+                .single()
+
+            // Get all predictions for this user
+            const { data: predictions } = await supabase
+                .from('predictions')
+                .select('result, match_date')
+                .eq('user_id', userId)
+                .not('result', 'is', null)
+                .order('match_date', { ascending: false })
+
+            const total = predictions?.length || 0
+            const won = predictions?.filter(p => p.result === 'WON').length || 0
+            const winRate = total > 0 ? Math.round((won / total) * 100) : 0
+
+            // Calculate streak — consecutive WON from most recent
+            let streak = 0
+            for (const p of predictions || []) {
+                if (p.result === 'WON') streak++
+                else break
+            }
+
+            setStats({
+                winRate,
+                tipsUsed: total,
+                streak,
+                plan: profile?.plan || 'free',
+            })
+        } catch (e) {
+            console.error('Failed to load stats:', e)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     function toggleLeague(league: string) {
         setSelectedLeagues(prev =>
@@ -32,18 +86,17 @@ export default function ProfilePage() {
     }
 
     const initials = user?.name?.slice(0, 2).toUpperCase() || 'U'
+    const isPro = stats.plan === 'pro'
 
     return (
         <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
 
             {/* Header */}
             <div className="relative pt-14 pb-6 px-5 overflow-hidden">
-                {/* Glow */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-44 rounded-full blur-3xl pointer-events-none"
                     style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.12) 0%, transparent 70%)' }} />
 
                 <div className="relative flex flex-col items-center gap-3">
-                    {/* Avatar */}
                     <div className="w-18 h-18 rounded-2xl flex items-center justify-center text-xl font-black text-white"
                         style={{
                             background: 'linear-gradient(135deg, #166534, #15803d)',
@@ -61,9 +114,14 @@ export default function ProfilePage() {
 
                     {/* Plan badge */}
                     <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full"
-                        style={{ background: 'rgba(22,163,74,0.1)', border: '1px solid rgba(34,197,94,0.2)' }}>
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                        <span className="text-green-400 text-[10px] font-black uppercase tracking-widest">PRO · Active</span>
+                        style={{
+                            background: isPro ? 'rgba(22,163,74,0.1)' : 'rgba(100,100,100,0.1)',
+                            border: isPro ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(150,150,150,0.2)',
+                        }}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${isPro ? 'bg-green-400 animate-pulse' : 'bg-slate-500'}`} />
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${isPro ? 'text-green-400' : 'text-slate-400'}`}>
+                            {isPro ? 'PRO · Active' : 'Free Plan'}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -72,9 +130,9 @@ export default function ProfilePage() {
             <div className="flex mx-5 mb-4 rounded-2xl overflow-hidden"
                 style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
                 {[
-                    { label: 'Win Rate', value: '78%' },
-                    { label: 'Tips Used', value: '142' },
-                    { label: 'Day Streak', value: '31' },
+                    { label: 'Win Rate', value: loading ? '...' : `${stats.winRate}%` },
+                    { label: 'Tips Used', value: loading ? '...' : `${stats.tipsUsed}` },
+                    { label: 'Day Streak', value: loading ? '...' : `${stats.streak}` },
                 ].map((s, i) => (
                     <div key={s.label}
                         className={`flex-1 flex flex-col items-center py-3.5 ${i < 2 ? 'border-r' : ''}`}
@@ -94,7 +152,7 @@ export default function ProfilePage() {
                     icon="💳"
                     iconBg="rgba(34,197,94,0.1)"
                     title="Subscription"
-                    subtitle="Pro Plan · Active"
+                    subtitle={isPro ? 'Pro Plan · Active' : 'Free Plan · Upgrade now'}
                     onClick={() => router.push('/subscribe')}
                 />
                 <MenuItem
@@ -123,7 +181,6 @@ export default function ProfilePage() {
                             {notifications ? 'Pre-match alerts on' : 'Notifications off'}
                         </p>
                     </div>
-                    {/* Toggle */}
                     <div
                         className="shrink-0 w-11 h-6 rounded-full relative transition-colors duration-200"
                         style={{ background: notifications ? '#16a34a' : '#1f2937' }}
@@ -183,19 +240,19 @@ export default function ProfilePage() {
 
                 <SectionLabel>Other</SectionLabel>
 
-                <MenuItem
-                    icon="⭐"
-                    iconBg="rgba(34,197,94,0.1)"
-                    title="Upgrade Plan"
-                    subtitle="View subscription options"
-                    onClick={() => router.push('/subscribe')}
-                />
+                {!isPro && (
+                    <MenuItem
+                        icon="⭐"
+                        iconBg="rgba(34,197,94,0.1)"
+                        title="Upgrade to Pro"
+                        subtitle="Unlock all 15 markets · ₦6,000/mo"
+                        onClick={() => router.push('/subscribe')}
+                    />
+                )}
 
-                {/* Sign out */}
                 <div
                     onClick={async () => {
                         await supabase.auth.signOut()
-                        sessionStorage.removeItem('matches')
                         router.push('/login')
                     }}
                     className="flex items-center gap-3 px-4 py-3.5 rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"

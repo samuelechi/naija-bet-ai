@@ -334,7 +334,7 @@ export default function LoginPage() {
                         {/* Trust badges */}
                         {mode === 'signin' && (
                             <div className="flex items-center justify-center gap-4 pt-2">
-                                {['🔒 Secure', '🇳🇬 Nigerian', '⚡ Instant'].map(b => (
+                                {['🔒 Secure', '⚡ Instant'].map(b => (
                                     <span key={b} className="text-slate-700 text-[9px] font-bold uppercase tracking-wider">{b}</span>
                                 ))}
                             </div>
