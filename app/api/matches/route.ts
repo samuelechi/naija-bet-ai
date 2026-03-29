@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getTodaysMatches } from '@/lib/football'
 
-export const revalidate = 300
+export const dynamic = 'force-dynamic'
 
 export async function GET() {
     try {
