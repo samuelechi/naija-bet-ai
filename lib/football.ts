@@ -1,85 +1,131 @@
-import axios from 'axios'
 import { Match, FormResult, H2HResult } from '@/types'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
-const footballData = axios.create({
-    baseURL: 'https://api.football-data.org/v4',
-    headers: { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY },
-})
+const BASE_URL = 'https://v3.football.api-sports.io'
+const apiHeaders = { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
 
-// ── In-memory cache ──────────────────────────────────────────────
-let matchCache: { data: Match[]; timestamp: number } | null = null
-const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+async function apiFetch(endpoint: string, params: Record<string, any> = {}) {
+    const url = new URL(`${BASE_URL}${endpoint}`)
+    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)))
+    const res = await fetch(url.toString(), { headers: apiHeaders })
+    if (!res.ok) throw new Error(`API-Football error: ${res.status}`)
+    return res.json()
+}
+
+function mapStatus(short: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
+    if (['FT', 'AET', 'PEN'].includes(short)) return 'FINISHED'
+    if (['NS', 'TBD', 'PST', 'CANC', 'ABD', 'AWD', 'WO'].includes(short)) return 'SCHEDULED'
+    return 'LIVE'
+}
 
 export async function getTodaysMatches(): Promise<Match[]> {
-    // Return cached data if still fresh
-    if (matchCache && Date.now() - matchCache.timestamp < CACHE_TTL) {
-        console.log('Returning cached matches')
-        return matchCache.data
+    const supabase = getSupabaseAdmin()
+    const today = new Date().toISOString().split('T')[0]
+
+    // ── Read from Supabase first (instant) ───────────────────────────────────
+    const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('match_date', today)
+        .order('utc_date', { ascending: true })
+
+    if (!error && data && data.length > 0) {
+        console.log(`Loaded ${data.length} matches from Supabase`)
+        return data.map((m): Match => ({
+            id: m.id,
+            homeTeam: {
+                id: m.home_team_id,
+                name: m.home_team_name,
+                shortName: m.home_team_short,
+                crest: m.home_team_crest,
+            },
+            awayTeam: {
+                id: m.away_team_id,
+                name: m.away_team_name,
+                shortName: m.away_team_short,
+                crest: m.away_team_crest,
+            },
+            utcDate: m.utc_date,
+            status: m.status,
+            competition: {
+                name: m.competition_name,
+                code: m.competition_code,
+            },
+        }))
     }
 
-    const today = new Date().toISOString().split('T')[0]
+    // ── Fallback: fetch live from API if Supabase is empty ───────────────────
+    // This only happens if cron hasn't run yet today
+    console.log('No matches in Supabase, fetching from API-Football...')
+
+    const LEAGUE_IDS = [39, 140, 135, 78, 61, 2, 3, 848, 6, 20, 686, 307, 253, 88, 94, 203, 40, 48, 550, 890, 879]
+    const CURRENT_SEASON = new Date().getFullYear()
     const allMatches: Match[] = []
-    const leagueIds = [2021, 2014, 2019, 2002, 2001]
+    const seenIds = new Set<number>()
 
-    for (const id of leagueIds) {
+    for (const leagueId of LEAGUE_IDS) {
         try {
-            const res = await footballData.get(`/competitions/${id}/matches`, {
-                params: { dateFrom: today, dateTo: today },
+            const data = await apiFetch('/fixtures', {
+                league: leagueId,
+                date: today,
+                season: CURRENT_SEASON,
             })
-            const matches = res.data.matches.map((m: any): Match => ({
-                id: m.id,
-                homeTeam: {
-                    id: m.homeTeam.id,
-                    name: m.homeTeam.name,
-                    shortName: m.homeTeam.shortName || m.homeTeam.tla || m.homeTeam.name,
-                    crest: m.homeTeam.crest,
-                },
-                awayTeam: {
-                    id: m.awayTeam.id,
-                    name: m.awayTeam.name,
-                    shortName: m.awayTeam.shortName || m.awayTeam.tla || m.awayTeam.name,
-                    crest: m.awayTeam.crest,
-                },
-                utcDate: m.utcDate,
-                status: m.status,
-                competition: {
-                    name: m.competition.name,
-                    code: m.competition.code,
-                },
-            }))
-            allMatches.push(...matches)
 
-            // Delay between calls to respect rate limit (10 req/min = 1 per 6s to be safe)
-            await new Promise(r => setTimeout(r, 1200))
-        } catch (e: any) {
-            if (e?.response?.status === 429) {
-                console.warn(`Rate limited on league ${id}, skipping`)
-            } else {
-                console.error(`Failed league ${id}:`, e)
+            if (data.response?.length) {
+                for (const m of data.response) {
+                    if (seenIds.has(m.fixture.id)) continue
+                    seenIds.add(m.fixture.id)
+
+                    const shortName = (name: string) =>
+                        name.length > 12 ? name.split(' ').pop() ?? name : name
+
+                    allMatches.push({
+                        id: m.fixture.id,
+                        homeTeam: {
+                            id: m.teams.home.id,
+                            name: m.teams.home.name,
+                            shortName: shortName(m.teams.home.name),
+                            crest: m.teams.home.logo,
+                        },
+                        awayTeam: {
+                            id: m.teams.away.id,
+                            name: m.teams.away.name,
+                            shortName: shortName(m.teams.away.name),
+                            crest: m.teams.away.logo,
+                        },
+                        utcDate: m.fixture.date,
+                        status: mapStatus(m.fixture.status.short),
+                        competition: {
+                            name: m.league.name,
+                            code: String(m.league.id),
+                        },
+                    })
+                }
             }
+
+            await new Promise(r => setTimeout(r, 6500))
+        } catch (e) {
+            console.error(`Failed league ${leagueId}:`, e)
         }
     }
 
-    const sorted = allMatches.sort(
+    return allMatches.sort(
         (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
     )
-
-    // Save to cache
-    matchCache = { data: sorted, timestamp: Date.now() }
-    console.log(`Cached ${sorted.length} matches`)
-
-    return sorted
 }
 
 export async function getTeamForm(teamId: number): Promise<FormResult[]> {
     try {
-        const res = await footballData.get(`/teams/${teamId}/matches`, {
-            params: { limit: 5, status: 'FINISHED' },
+        const data = await apiFetch('/fixtures', {
+            team: teamId,
+            last: 5,
+            status: 'FT',
         })
-        return res.data.matches.slice(-5).map((m: any): FormResult => {
-            const homeGoals = m.score.fullTime.home ?? 0
-            const awayGoals = m.score.fullTime.away ?? 0
-            const isHome = m.homeTeam.id === teamId
+
+        return data.response.slice(-5).map((m: any): FormResult => {
+            const homeGoals = m.goals.home ?? 0
+            const awayGoals = m.goals.away ?? 0
+            const isHome = m.teams.home.id === teamId
             if (homeGoals === awayGoals) return 'D'
             if (homeGoals > awayGoals) return isHome ? 'W' : 'L'
             return isHome ? 'L' : 'W'
@@ -94,32 +140,32 @@ export async function getH2H(
     awayTeamId: number
 ): Promise<H2HResult[]> {
     try {
-        const res = await footballData.get(`/teams/${homeTeamId}/matches`, {
-            params: { limit: 20, status: 'FINISHED' },
+        const data = await apiFetch('/fixtures/headtohead', {
+            h2h: `${homeTeamId}-${awayTeamId}`,
+            last: 5,
+            status: 'FT',
         })
-        return res.data.matches
-            .filter((m: any) =>
-                (m.homeTeam.id === homeTeamId && m.awayTeam.id === awayTeamId) ||
-                (m.homeTeam.id === awayTeamId && m.awayTeam.id === homeTeamId)
-            )
-            .slice(0, 5)
-            .map((m: any): H2HResult => {
-                const homeGoals = m.score.fullTime.home ?? 0
-                const awayGoals = m.score.fullTime.away ?? 0
-                const isHome = m.homeTeam.id === homeTeamId
-                let result: 'W' | 'D' | 'L'
-                if (homeGoals === awayGoals) result = 'D'
-                else if (homeGoals > awayGoals) result = isHome ? 'W' : 'L'
-                else result = isHome ? 'L' : 'W'
-                return {
-                    date: new Date(m.utcDate).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
-                    homeTeam: m.homeTeam.shortName || m.homeTeam.name,
-                    awayTeam: m.awayTeam.shortName || m.awayTeam.name,
-                    homeScore: homeGoals,
-                    awayScore: awayGoals,
-                    result,
-                }
-            })
+
+        return data.response.slice(0, 5).map((m: any): H2HResult => {
+            const homeGoals = m.goals.home ?? 0
+            const awayGoals = m.goals.away ?? 0
+            const isHome = m.teams.home.id === homeTeamId
+            let result: 'W' | 'D' | 'L'
+            if (homeGoals === awayGoals) result = 'D'
+            else if (homeGoals > awayGoals) result = isHome ? 'W' : 'L'
+            else result = isHome ? 'L' : 'W'
+            return {
+                date: new Date(m.fixture.date).toLocaleDateString('en-GB', {
+                    month: 'short',
+                    year: '2-digit',
+                }),
+                homeTeam: m.teams.home.name,
+                awayTeam: m.teams.away.name,
+                homeScore: homeGoals,
+                awayScore: awayGoals,
+                result,
+            }
+        })
     } catch {
         return []
     }
