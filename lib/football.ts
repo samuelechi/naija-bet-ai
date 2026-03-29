@@ -22,7 +22,6 @@ export async function getTodaysMatches(): Promise<Match[]> {
     const supabase = getSupabaseAdmin()
     const today = new Date().toISOString().split('T')[0]
 
-    // ── Read from Supabase first (instant) ───────────────────────────────────
     const { data, error } = await supabase
         .from('matches')
         .select('*')
@@ -54,64 +53,9 @@ export async function getTodaysMatches(): Promise<Match[]> {
         }))
     }
 
-    // ── Fallback: fetch live from API if Supabase is empty ───────────────────
-    // This only happens if cron hasn't run yet today
-    console.log('No matches in Supabase, fetching from API-Football...')
-
-    const LEAGUE_IDS = [39, 140, 135, 78, 61, 2, 3, 848, 6, 20, 686, 307, 253, 88, 94, 203, 40, 48, 550, 890, 879]
-    const CURRENT_SEASON = new Date().getFullYear()
-    const allMatches: Match[] = []
-    const seenIds = new Set<number>()
-
-    for (const leagueId of LEAGUE_IDS) {
-        try {
-            const data = await apiFetch('/fixtures', {
-                league: leagueId,
-                date: today,
-                season: CURRENT_SEASON,
-            })
-
-            if (data.response?.length) {
-                for (const m of data.response) {
-                    if (seenIds.has(m.fixture.id)) continue
-                    seenIds.add(m.fixture.id)
-
-                    const shortName = (name: string) =>
-                        name.length > 12 ? name.split(' ').pop() ?? name : name
-
-                    allMatches.push({
-                        id: m.fixture.id,
-                        homeTeam: {
-                            id: m.teams.home.id,
-                            name: m.teams.home.name,
-                            shortName: shortName(m.teams.home.name),
-                            crest: m.teams.home.logo,
-                        },
-                        awayTeam: {
-                            id: m.teams.away.id,
-                            name: m.teams.away.name,
-                            shortName: shortName(m.teams.away.name),
-                            crest: m.teams.away.logo,
-                        },
-                        utcDate: m.fixture.date,
-                        status: mapStatus(m.fixture.status.short),
-                        competition: {
-                            name: m.league.name,
-                            code: String(m.league.id),
-                        },
-                    })
-                }
-            }
-
-            await new Promise(r => setTimeout(r, 6500))
-        } catch (e) {
-            console.error(`Failed league ${leagueId}:`, e)
-        }
-    }
-
-    return allMatches.sort(
-        (a, b) => new Date(a.utcDate).getTime() - new Date(b.utcDate).getTime()
-    )
+    // No matches in Supabase — return empty instantly, cron populates at midnight
+    console.log('No matches in Supabase for today')
+    return []
 }
 
 export async function getTeamForm(teamId: number): Promise<FormResult[]> {

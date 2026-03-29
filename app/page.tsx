@@ -7,14 +7,28 @@ import BottomNav from '@/components/layout/BottomNav'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const FILTERS = ['All', 'EPL', 'La Liga', 'Serie A', 'UCL', 'NPFL']
+const FILTERS = [
+  'All', 'EPL', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
+  'UCL', 'UEL', 'UECL', 'AFCON', 'CAF', 'NPFL',
+  'Saudi', 'MLS', 'WSL', 'Nations League'
+]
 
 const LEAGUE_MAP: Record<string, string[]> = {
   'EPL': ['Premier League'],
-  'La Liga': ['Primera Division'],
+  'La Liga': ['Primera Division', 'La Liga'],
   'Serie A': ['Serie A'],
+  'Bundesliga': ['Bundesliga'],
+  'Ligue 1': ['Ligue 1'],
   'UCL': ['UEFA Champions League'],
-  'NPFL': ['NPFL'],
+  'UEL': ['UEFA Europa League'],
+  'UECL': ['UEFA Europa Conference League', 'Conference League'],
+  'AFCON': ['Africa Cup of Nations', 'AFCON'],
+  'CAF': ['CAF Champions League'],
+  'NPFL': ['NPFL', 'Nigerian Professional Football League'],
+  'Saudi': ['Saudi Professional League', 'Saudi Pro League'],
+  'MLS': ['MLS', 'Major League Soccer'],
+  'WSL': ["Women's Super League", 'WSL'],
+  'Nations League': ['UEFA Nations League', 'Nations League'],
 }
 
 export default function Home() {
@@ -28,12 +42,7 @@ export default function Home() {
       if (!session) {
         router.push('/login')
       } else {
-        const cached = sessionStorage.getItem('matches')
-        if (cached) {
-          setMatches(JSON.parse(cached))
-          setLoading(false)
-          return
-        }
+        // Don't use sessionStorage cache — always load fresh from Supabase
         fetchMatches()
       }
     })
@@ -43,9 +52,7 @@ export default function Home() {
     try {
       const res = await fetch('/api/matches')
       const data = await res.json()
-      const m = data.matches || []
-      setMatches(m)
-      sessionStorage.setItem('matches', JSON.stringify(m))
+      setMatches(data.matches || [])
     } catch (err) {
       console.error('Failed to fetch matches:', err)
     } finally {
@@ -66,7 +73,6 @@ export default function Home() {
 
       {/* Header */}
       <div className="relative pt-14 pb-5 px-5 overflow-hidden">
-        {/* Background glow */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 rounded-full blur-3xl"
             style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.18) 0%, transparent 70%)' }} />
@@ -158,8 +164,14 @@ export default function Home() {
               ⚽
             </div>
             <div className="text-center">
-              <p className="text-white font-bold mb-1">No matches today</p>
-              <p className="text-slate-500 text-xs">Check back later for predictions</p>
+              <p className="text-white font-bold mb-1">
+                {activeFilter === 'All' ? 'No matches today' : `No ${activeFilter} matches today`}
+              </p>
+              <p className="text-slate-500 text-xs">
+                {activeFilter === 'All'
+                  ? 'Leagues are on international break — check back April 5th'
+                  : 'Try a different league or check back later'}
+              </p>
             </div>
           </div>
         )}
