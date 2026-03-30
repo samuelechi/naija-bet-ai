@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import BottomNav from '@/components/layout/BottomNav'
@@ -38,13 +38,32 @@ const PLANS = [
 
 const TRUST_BADGES = ['🔒 Secure Paystack', '⚡ Instant Access', '↩️ Cancel Anytime']
 
+// Detect if running inside Capacitor Android app
+function isNativeApp(): boolean {
+    if (typeof window === 'undefined') return false
+    return !!(window as any).Capacitor?.isNative
+}
+
 export default function SubscribePage() {
     const router = useRouter()
     const [loading, setLoading] = useState<string | null>(null)
     const [error, setError] = useState<string | null>(null)
+    const [showAndroidPopup, setShowAndroidPopup] = useState(false)
+    const [isAndroid, setIsAndroid] = useState(false)
+
+    useEffect(() => {
+        setIsAndroid(isNativeApp())
+    }, [])
 
     async function handleSubscribe(plan: string) {
         if (plan === 'free') return
+
+        // Show popup if on Android app
+        if (isAndroid) {
+            setShowAndroidPopup(true)
+            return
+        }
+
         setLoading(plan)
         setError(null)
         try {
@@ -68,12 +87,80 @@ export default function SubscribePage() {
         }
     }
 
+    function openWebsite() {
+        window.open('https://naijabetai.com/subscribe', '_blank')
+        setShowAndroidPopup(false)
+    }
+
     return (
         <main className="min-h-screen flex flex-col pb-24" style={{ background: '#0A0A0F' }}>
 
+            {/* ── Android Popup ── */}
+            {showAndroidPopup && (
+                <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8"
+                    style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+                    onClick={() => setShowAndroidPopup(false)}
+                >
+                    <div
+                        className="w-full rounded-3xl p-6 relative"
+                        style={{
+                            background: 'linear-gradient(180deg, #0d1f12 0%, #080f0a 100%)',
+                            border: '1px solid rgba(34,197,94,0.2)',
+                            boxShadow: '0 -20px 60px rgba(0,0,0,0.5)',
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        {/* Top accent line */}
+                        <div className="absolute top-0 left-0 right-0 h-px rounded-t-3xl"
+                            style={{ background: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.5), transparent)' }} />
+
+                        {/* Icon */}
+                        <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
+                            style={{
+                                background: 'linear-gradient(135deg, #166534, #15803d)',
+                                border: '1px solid rgba(74,222,128,0.2)',
+                                boxShadow: '0 0 20px rgba(22,163,74,0.2)',
+                            }}>
+                            🌐
+                        </div>
+
+                        <h3 className="text-white font-black text-lg font-display text-center mb-2">
+                            Subscribe on Our Website
+                        </h3>
+                        <p className="text-slate-400 text-sm text-center mb-6 leading-relaxed">
+                            To complete your subscription, visit our website and pay securely via Paystack. Your Pro access activates instantly after payment.
+                        </p>
+
+                        {/* Website URL pill */}
+                        <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl mb-6"
+                            style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                            <span className="text-green-400 text-xs">🔗</span>
+                            <span className="text-green-400 text-xs font-black">naijabetai.com/subscribe</span>
+                        </div>
+
+                        {/* Buttons */}
+                        <button
+                            onClick={openWebsite}
+                            className="w-full py-4 rounded-2xl text-sm font-black text-white mb-3 transition-all active:scale-95"
+                            style={{
+                                background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+                                boxShadow: '0 8px 24px rgba(22,163,74,0.3)',
+                            }}
+                        >
+                            Open Website to Subscribe →
+                        </button>
+                        <button
+                            onClick={() => setShowAndroidPopup(false)}
+                            className="w-full py-3 rounded-2xl text-sm font-bold text-slate-500"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Header */}
             <div className="relative pt-14 pb-6 px-5 overflow-hidden">
-                {/* Glow */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full blur-3xl pointer-events-none"
                     style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.15) 0%, transparent 70%)' }} />
 
@@ -109,6 +196,17 @@ export default function SubscribePage() {
                     </div>
                 )}
 
+                {/* Android banner */}
+                {isAndroid && (
+                    <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
+                        style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
+                        <span className="text-lg">🌐</span>
+                        <p className="text-green-400 text-xs leading-relaxed">
+                            Subscriptions are completed on our website. Tap Subscribe to open the payment page.
+                        </p>
+                    </div>
+                )}
+
                 {/* Plan cards */}
                 {PLANS.map((plan) => (
                     <div
@@ -125,7 +223,6 @@ export default function SubscribePage() {
                     >
                         {plan.featured && (
                             <>
-                                {/* Decorative top line */}
                                 <div className="absolute top-0 left-0 right-0 h-px"
                                     style={{ background: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.5), transparent)' }} />
                                 <span className="absolute top-4 right-4 text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest"
@@ -174,7 +271,7 @@ export default function SubscribePage() {
                                         <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                         Redirecting to Paystack...
                                     </span>
-                                ) : '🔒 Subscribe via Paystack'}
+                                ) : isAndroid ? '🌐 Subscribe via Website' : '🔒 Subscribe via Paystack'}
                             </button>
                         )}
                     </div>
