@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import OneSignalInit from '@/components/OneSignalInit'
 
 export const metadata: Metadata = {
   title: 'NaijaBetAI',
@@ -27,6 +28,7 @@ export default function RootLayout({
         />
       </head>
       <body style={{ fontFamily: "'Inter', sans-serif" }}>
+        <OneSignalInit />
         <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh' }}>
           {children}
         </div>

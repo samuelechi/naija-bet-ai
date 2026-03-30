@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "642269836350",
+    "project_id": "naijabetai",
+    "storage_bucket": "naijabetai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:642269836350:android:61713e427cd3d0506a8d6f",
+        "android_client_info": {
+          "package_name": "com.naijabetai.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQFn0FakRazcOuieW1DPEvPp_YaeIuZ4I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
