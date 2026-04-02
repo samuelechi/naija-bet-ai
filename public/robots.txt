@@ -1,7 +1,0 @@
-User-agent: *
-Allow: /
-Disallow: /api/
-Disallow: /profile
-Disallow: /history
-
-Sitemap: https://naijabetai.com/sitemap.xml
