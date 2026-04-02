@@ -31,17 +31,6 @@ const LEAGUE_MAP: Record<string, string[]> = {
   'Nations League': ['UEFA Nations League', 'Nations League'],
 }
 
-// ─── Mock match for testing (remove after April 5th) ─────────────────────────
-const MOCK_MATCH: Match = {
-  id: 999999,
-  utcDate: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(),
-  status: 'SCHEDULED',
-  competition: { name: 'Premier League', code: 'PL' },
-  homeTeam: { id: 64, name: 'Liverpool FC', shortName: 'Liverpool', crest: 'https://crests.football-data.org/64.png' },
-  awayTeam: { id: 65, name: 'Manchester City FC', shortName: 'Man City', crest: 'https://crests.football-data.org/65.png' },
-}
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function Home() {
   const router = useRouter()
   const [matches, setMatches] = useState<Match[]>([])
@@ -65,11 +54,9 @@ export default function Home() {
     try {
       const res = await fetch('/api/matches')
       const data = await res.json()
-      const realMatches = (data.matches || []).filter((m: Match) => m.id !== 999999)
-      setMatches([MOCK_MATCH, ...realMatches])
+      setMatches(data.matches || [])
     } catch (err) {
       console.error('Failed to fetch matches:', err)
-      setMatches([MOCK_MATCH])
     } finally {
       setLoading(false)
     }
@@ -207,7 +194,7 @@ export default function Home() {
               </p>
               <p className="text-slate-500 text-xs">
                 {activeFilter === 'All'
-                  ? 'Leagues are on international break — check back April 5th'
+                  ? 'Check back later for today\'s predictions'
                   : 'Try a different league or check back later'}
               </p>
             </div>
@@ -234,3 +221,7 @@ export default function Home() {
     </main>
   )
 }
+
+
+
+DELETE FROM matches WHERE id = 999999;

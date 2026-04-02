@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-import OneSignalInit from '@/components/OneSignalInit'
+import OneSignalInit from '../components/OneSignalInit'
 
 export const metadata: Metadata = {
   title: 'NaijaBetAI',

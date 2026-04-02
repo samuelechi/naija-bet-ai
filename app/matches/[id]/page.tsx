@@ -1,6 +1,5 @@
 'use client'
-export const dynamic = 'force-static'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { Match } from '@/types'
 import BottomNav from '@/components/layout/BottomNav'
@@ -111,6 +110,7 @@ export default function MatchDetailPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const matchId = params.id as string
+    const hasFetched = useRef(false)
 
     const [match, setMatch] = useState<Match | null>(null)
     const [prediction, setPrediction] = useState<FullPrediction | null>(null)
@@ -121,6 +121,9 @@ export default function MatchDetailPage() {
     const [activeTab, setActiveTab] = useState<'top' | 'all'>('top')
 
     useEffect(() => {
+        if (hasFetched.current) return
+        hasFetched.current = true
+
         const matchData = searchParams.get('match')
         if (matchData) setMatch(JSON.parse(decodeURIComponent(matchData)))
         loadPrediction()
@@ -136,7 +139,6 @@ export default function MatchDetailPage() {
 
             const { data: { session } } = await supabase.auth.getSession()
 
-            // Check if user is pro
             const { data: profile } = await supabase
                 .from('profiles')
                 .select('plan')

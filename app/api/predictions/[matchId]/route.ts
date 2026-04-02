@@ -48,6 +48,18 @@ export async function POST(
     }
     // ────────────────────────────────────────────────────────────────────────
 
+    // ── Cache check ──────────────────────────────────────────────────────────
+    const { data: cachedMatch } = await supabase
+        .from('matches')
+        .select('prediction_text')
+        .eq('id', matchId)
+        .single()
+
+    if (cachedMatch?.prediction_text) {
+        return NextResponse.json({ prediction: cachedMatch.prediction_text, cached: true })
+    }
+    // ────────────────────────────────────────────────────────────────────────
+
     try {
         const [homeForm, awayForm, h2h] = await Promise.all([
             getTeamForm(match.homeTeam.id),
@@ -57,6 +69,16 @@ export async function POST(
 
         const prediction = await generatePrediction({ match, homeForm, awayForm, h2h })
 
+        // ── Save prediction to matches table (global cache) ──────────────────
+        const { error: saveError } = await supabase
+            .from('matches')
+            .update({ prediction_text: prediction })
+            .eq('id', matchId)
+
+        console.log('Cache save result:', { matchId, saveError })
+        // ────────────────────────────────────────────────────────────────────
+        // ────────────────────────────────────────────────────────────────────
+
         // ── Auto-save to history ─────────────────────────────────────────────
         await supabase.from('predictions').upsert({
             match_id: matchId,
@@ -65,7 +87,7 @@ export async function POST(
             home_team: match.homeTeam.shortName,
             away_team: match.awayTeam.shortName,
             competition: match.competition.name,
-            verdict: `${prediction.bestBet.type}: ${prediction.bestBet.pick}`,  // ← fixed
+            verdict: `${prediction.bestBet.type}: ${prediction.bestBet.pick}`,
             prediction_data: prediction,
             expires_at: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
         }, {
