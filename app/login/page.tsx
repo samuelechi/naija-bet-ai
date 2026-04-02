@@ -203,7 +203,7 @@ export default function LoginPage() {
                                     type="text"
                                     value={name}
                                     onChange={e => setName(e.target.value)}
-                                    placeholder="Samuel Echi"
+                                    placeholder="John Doe"
                                     className="w-full rounded-xl px-4 py-3.5 text-sm text-white placeholder-slate-700 outline-none transition-all duration-200"
                                     style={{
                                         background: 'rgba(255,255,255,0.03)',
