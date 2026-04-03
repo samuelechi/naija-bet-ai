@@ -93,6 +93,15 @@ export default function Home() {
   const [userPlan, setUserPlan] = useState('free')
 
   useEffect(() => {
+    // 1. Check if they are arriving from a password reset email
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      // If they have a recovery token, send them straight to the reset page!
+      router.push(`/reset-password${hash}`);
+      return;
+    }
+
+    // 2. Normal check: If no token and no session, kick to login
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.push('/login')
