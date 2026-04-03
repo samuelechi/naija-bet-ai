@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [password, setPassword] = useState('')
@@ -61,10 +61,9 @@ export default function ResetPasswordPage() {
 
     if (verifying) {
         return (
-            <main className="min-h-screen flex items-center justify-center"
-                style={{ background: '#0A0A0F' }}>
+            <div className="flex items-center justify-center min-h-screen" style={{ background: '#0A0A0F' }}>
                 <div className="w-8 h-8 border-2 border-green-500/40 border-t-green-400 rounded-full animate-spin" />
-            </main>
+            </div>
         )
     }
 
@@ -155,5 +154,17 @@ export default function ResetPasswordPage() {
                 )}
             </div>
         </main>
+    )
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-screen" style={{ background: '#0A0A0F' }}>
+                <div className="w-8 h-8 border-2 border-green-500/40 border-t-green-400 rounded-full animate-spin" />
+            </div>
+        }>
+            <ResetPasswordForm />
+        </Suspense>
     )
 }
