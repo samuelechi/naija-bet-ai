@@ -35,7 +35,8 @@ export default function LoginPage() {
                 router.push('/')
             } else if (mode === 'forgot') {
                 const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                    redirectTo: `${window.location.origin}/reset-password`,
+                    // ✅ Send them to the secure callback first so it can process the token
+                    redirectTo: `${window.location.origin}/auth/callback`,
                 })
                 if (error) throw error
                 setSuccess('Reset link sent! Check your inbox.')
