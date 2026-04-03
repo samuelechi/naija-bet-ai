@@ -72,7 +72,7 @@ function ResetPasswordForm() {
         }
 
         setSuccess(true)
-        setTimeout(() => router.push('/'), 2500)
+        setTimeout(() => { window.location.href = '/' }, 2500)
     }
 
     return (
