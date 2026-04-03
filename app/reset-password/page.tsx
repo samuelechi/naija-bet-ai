@@ -46,6 +46,23 @@ function ResetPasswordForm() {
         setLoading(true)
         setError(null)
 
+        // 🛡️ THE ULTIMATE FAILSAFE: Grab the token directly from the URL bar
+        const hash = window.location.hash;
+        if (hash && hash.includes('access_token')) {
+            const hashParams = new URLSearchParams(hash.substring(1));
+            const access_token = hashParams.get('access_token');
+            const refresh_token = hashParams.get('refresh_token');
+
+            if (access_token && refresh_token) {
+                // Force Supabase to start the session right now
+                await supabase.auth.setSession({
+                    access_token,
+                    refresh_token
+                });
+            }
+        }
+
+        // Now update the password!
         const { error } = await supabase.auth.updateUser({ password })
 
         if (error) {
@@ -56,14 +73,6 @@ function ResetPasswordForm() {
 
         setSuccess(true)
         setTimeout(() => router.push('/'), 2500)
-    }
-
-    if (verifying) {
-        return (
-            <div className="flex items-center justify-center min-h-screen" style={{ background: '#0A0A0F' }}>
-                <div className="w-8 h-8 border-2 border-green-500/40 border-t-green-400 rounded-full animate-spin" />
-            </div>
-        )
     }
 
     return (
