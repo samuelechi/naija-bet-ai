@@ -52,7 +52,7 @@ export const metadata: Metadata = {
   },
   manifest: '/manifest.json',
   icons: {
-    icon: '/logo.ico',
+    icon: '/logo.png',
     apple: '/apple-touch-icon.png',
   },
   verification: {
