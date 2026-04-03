@@ -15,22 +15,28 @@ function ResetPasswordForm() {
     const [success, setSuccess] = useState(false)
 
     useEffect(() => {
-        const token_hash = searchParams.get('token_hash')
-        const type = searchParams.get('type')
-
-        if (token_hash && type) {
-            supabase.auth.verifyOtp({
-                type: type as any,
-                token_hash,
-            }).then(({ error }) => {
-                if (error) {
-                    setError('Reset link is invalid or has expired. Please request a new one.')
+        // Listen for Supabase automatically processing the # token
+        const { data: authListener } = supabase.auth.onAuthStateChange(
+            (event, session) => {
+                if (event === 'PASSWORD_RECOVERY' || session) {
+                    setVerifying(false)
+                    setError(null)
                 }
+            }
+        )
+
+        // Fallback check
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session) {
                 setVerifying(false)
-            })
-        } else {
-            setVerifying(false)
-            setError('Invalid reset link.')
+            } else if (!window.location.hash.includes('access_token')) {
+                setVerifying(false)
+                setError('Invalid reset link. Please request a new one.')
+            }
+        })
+
+        return () => {
+            authListener.subscription.unsubscribe()
         }
     }, [])
 

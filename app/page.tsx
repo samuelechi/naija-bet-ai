@@ -96,7 +96,7 @@ export default function Home() {
     // 1. Check if they are arriving from a password reset email
     const hash = window.location.hash;
     if (hash && hash.includes('type=recovery')) {
-      // If they have a recovery token, send them straight to the reset page!
+      // Send them straight to the reset page with the hash!
       router.push(`/reset-password${hash}`);
       return;
     }
