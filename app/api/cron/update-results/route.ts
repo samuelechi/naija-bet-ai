@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { sendNotification } from '@/app/api/notifications/send/route'
 
 const FOOTBALL_API = 'https://api.football-data.org/v4'
 const headers = { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! }
@@ -19,8 +20,6 @@ function evaluateBet(
     const homeWon = homeScore > awayScore
     const awayWon = awayScore > homeScore
 
-    // ── 1X2 ──────────────────────────────────────────────────────────────────
-    // "1X2: Bayern Win" | "1X2: Draw" | "1X2: Man City Win"
     if (v.startsWith('1x2:')) {
         const pick = v.replace('1x2:', '').trim()
         if (pick === 'draw') return isDraw ? 'WON' : 'LOST'
@@ -29,8 +28,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── BTTS ──────────────────────────────────────────────────────────────────
-    // "BTTS: Yes" | "BTTS: No"
     if (v.startsWith('btts:') && !v.startsWith('btts & win')) {
         const pick = v.replace('btts:', '').trim()
         const bothScored = homeScore > 0 && awayScore > 0
@@ -39,8 +36,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Over/Under ────────────────────────────────────────────────────────────
-    // "Over/Under: Over 2.5" | "Over/Under: Under 1.5"
     if (v.startsWith('over/under:')) {
         const pick = v.replace('over/under:', '').trim()
         const lineMatch = pick.match(/(\d+\.?\d*)/)
@@ -51,8 +46,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Double Chance ─────────────────────────────────────────────────────────
-    // "Double Chance: PSG/Draw" | "Double Chance: Arsenal/Draw" | "Double Chance: PSG/Arsenal"
     if (v.startsWith('double chance:')) {
         const pick = v.replace('double chance:', '').trim()
         if (pick.includes('/draw')) {
@@ -69,8 +62,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Correct Score ─────────────────────────────────────────────────────────
-    // "Correct Score: 2-1"
     if (v.startsWith('correct score:')) {
         const pick = v.replace('correct score:', '').trim()
         const scoreMatch = pick.match(/(\d+)\s*[-:]\s*(\d+)/)
@@ -80,12 +71,8 @@ function evaluateBet(
         return (homeScore === predHome && awayScore === predAway) ? 'WON' : 'LOST'
     }
 
-    // ── HT/FT ─────────────────────────────────────────────────────────────────
-    // Void — no HT score available from football-data.org free tier
     if (v.startsWith('ht/ft:')) return 'DRAW'
 
-    // ── Asian Handicap ────────────────────────────────────────────────────────
-    // "Asian Handicap: Bayern -0.5" | "Asian Handicap: Man City +1"
     if (v.startsWith('asian handicap:')) {
         const pick = v.replace('asian handicap:', '').trim()
         const handicapMatch = pick.match(/([+-]?\d+\.?\d*)/)
@@ -106,12 +93,8 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── First Goal ────────────────────────────────────────────────────────────
-    // Void — no scorer timeline data available
     if (v.startsWith('first goal:')) return 'DRAW'
 
-    // ── Clean Sheet ───────────────────────────────────────────────────────────
-    // "Clean Sheet: Home" | "Clean Sheet: Away" | "Clean Sheet: Neither"
     if (v.startsWith('clean sheet:')) {
         const pick = v.replace('clean sheet:', '').trim()
         if (pick === 'home') return awayScore === 0 ? 'WON' : 'LOST'
@@ -120,19 +103,14 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Draw No Bet ───────────────────────────────────────────────────────────
-    // "Draw No Bet: Bayern" | "Draw No Bet: Man City"
-    // If draw → void (DRAW). If picked team wins → WON. If picked team loses → LOST.
     if (v.startsWith('draw no bet:')) {
         const pick = v.replace('draw no bet:', '').trim()
-        if (isDraw) return 'DRAW' // stake refunded
+        if (isDraw) return 'DRAW'
         if (pick.includes(home)) return homeWon ? 'WON' : 'LOST'
         if (pick.includes(away)) return awayWon ? 'WON' : 'LOST'
         return 'LOST'
     }
 
-    // ── BTTS & Win ────────────────────────────────────────────────────────────
-    // "BTTS & Win: Bayern & BTTS" | "BTTS & Win: Man City & BTTS"
     if (v.startsWith('btts & win:')) {
         const pick = v.replace('btts & win:', '').trim()
         const bothScored = homeScore > 0 && awayScore > 0
@@ -142,8 +120,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Odd/Even Goals ────────────────────────────────────────────────────────
-    // "Odd/Even Goals: Odd" | "Odd/Even Goals: Even"
     if (v.startsWith('odd/even goals:')) {
         const pick = v.replace('odd/even goals:', '').trim()
         const isEven = totalGoals % 2 === 0
@@ -152,8 +128,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Multi-Goals ───────────────────────────────────────────────────────────
-    // "Multi-Goals: 2-4" | "Multi-Goals: 1-2" | "Multi-Goals: 3-4"
     if (v.startsWith('multi-goals:')) {
         const pick = v.replace('multi-goals:', '').trim()
         const rangeMatch = pick.match(/(\d+)\s*[-]\s*(\d+)/)
@@ -163,13 +137,8 @@ function evaluateBet(
         return (totalGoals >= low && totalGoals <= high) ? 'WON' : 'LOST'
     }
 
-    // ── Both Halves Over 0.5 ──────────────────────────────────────────────────
-    // "Both Halves Over 0.5: Yes" | "Both Halves Over 0.5: No"
-    // ⚠️ We don't have HT scores — void
     if (v.startsWith('both halves over 0.5:')) return 'DRAW'
 
-    // ── Win to Nil ────────────────────────────────────────────────────────────
-    // "Win to Nil: Bayern" | "Win to Nil: Man City"
     if (v.startsWith('win to nil:')) {
         const pick = v.replace('win to nil:', '').trim()
         if (pick.includes(home)) return (homeWon && awayScore === 0) ? 'WON' : 'LOST'
@@ -177,7 +146,6 @@ function evaluateBet(
         return 'LOST'
     }
 
-    // ── Fallback ──────────────────────────────────────────────────────────────
     return 'LOST'
 }
 
@@ -193,7 +161,7 @@ export async function GET(request: NextRequest) {
 
     const { data: pending, error } = await supabase
         .from('predictions')
-        .select('id, match_id, verdict, home_team, away_team, match_date')
+        .select('id, match_id, verdict, home_team, away_team, match_date, user_id')
         .is('result', null)
         .gte('match_date', sevenDaysAgo)
 
@@ -224,6 +192,9 @@ export async function GET(request: NextRequest) {
         }
     }
 
+    // Track wins per user for notifications
+    const userWins: Record<string, { count: number; match: string }> = {}
+
     for (const prediction of pending) {
         const result = results[prediction.match_id]
         if (!result) continue
@@ -242,7 +213,57 @@ export async function GET(request: NextRequest) {
             .eq('id', prediction.id)
 
         updated++
+
+        // Track wins for notifications
+        if (outcome === 'WON' && prediction.user_id) {
+            if (!userWins[prediction.user_id]) {
+                userWins[prediction.user_id] = {
+                    count: 0,
+                    match: `${prediction.home_team} vs ${prediction.away_team}`
+                }
+            }
+            userWins[prediction.user_id].count++
+        }
     }
 
-    return NextResponse.json({ updated, total: pending.length, message: `Updated ${updated} predictions` })
+    // Send win notifications
+    const winnerIds = Object.keys(userWins)
+    if (winnerIds.length > 0) {
+        const winMessages = [
+            (match: string, count: number) => ({
+                title: "🎉 Your Tip Won!",
+                message: count > 1
+                    ? `${count} of your predictions came in today! Keep riding the streak 💰`
+                    : `Your pick on ${match} came in! The AI doesn't miss 🔥`
+            }),
+            (match: string, count: number) => ({
+                title: "💰 Prediction Hit!",
+                message: count > 1
+                    ? `${count} winning tips today. NaijaBetAI is built different 🧠`
+                    : `${match} — your tip landed! Check your results 🎯`
+            }),
+        ]
+
+        for (const userId of winnerIds) {
+            const { count, match } = userWins[userId]
+            const msgTemplate = winMessages[Math.floor(Math.random() * winMessages.length)]
+            const { title, message } = msgTemplate(match, count)
+
+            await sendNotification({
+                title,
+                message,
+                userIds: [userId],
+                url: 'https://naijabetai.com/history'
+            })
+
+            await new Promise(r => setTimeout(r, 200))
+        }
+    }
+
+    return NextResponse.json({
+        updated,
+        total: pending.length,
+        winnersNotified: winnerIds.length,
+        message: `Updated ${updated} predictions, notified ${winnerIds.length} winners`
+    })
 }
