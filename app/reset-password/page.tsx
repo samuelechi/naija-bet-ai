@@ -15,28 +15,21 @@ function ResetPasswordForm() {
     const [success, setSuccess] = useState(false)
 
     useEffect(() => {
-        // Listen for Supabase automatically processing the # token
-        const { data: authListener } = supabase.auth.onAuthStateChange(
-            (event, session) => {
-                if (event === 'PASSWORD_RECOVERY' || session) {
-                    setVerifying(false)
-                    setError(null)
-                }
-            }
-        )
-
-        // Fallback check
-        supabase.auth.getSession().then(({ data: { session } }) => {
+        // 1. Listen for ANY session update
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (session) {
                 setVerifying(false)
-            } else if (!window.location.hash.includes('access_token')) {
-                setVerifying(false)
-                setError('Invalid reset link. Please request a new one.')
             }
         })
 
+        // 2. THE KILL SWITCH: Never spin for more than 2 seconds, no matter what.
+        const timer = setTimeout(() => {
+            setVerifying(false)
+        }, 2000)
+
         return () => {
-            authListener.subscription.unsubscribe()
+            subscription.unsubscribe()
+            clearTimeout(timer)
         }
     }, [])
 
