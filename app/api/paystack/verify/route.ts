@@ -22,11 +22,12 @@ export async function POST(req: NextRequest) {
         })
 
         const data = await response.json()
+        console.log('Paystack verify response:', JSON.stringify(data, null, 2))
 
         if (!data.status || data.data.status !== 'success') {
+            console.log('Payment verification failed:', data)
             return NextResponse.json({ error: 'Payment verification failed' }, { status: 400 })
         }
-
         const tx = data.data
 
         // Calculate subscription expiry (30 days from now)
