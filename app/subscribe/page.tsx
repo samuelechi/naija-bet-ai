@@ -36,9 +36,6 @@ const PLANS = [
     },
 ]
 
-const TRUST_BADGES = ['🔒 Secure Paystack', '⚡ Instant Access', '↩️ Cancel Anytime']
-
-// Detect if running inside Capacitor Android app
 function isNativeApp(): boolean {
     if (typeof window === 'undefined') return false
     return !!(window as any).Capacitor?.isNative
@@ -50,21 +47,15 @@ export default function SubscribePage() {
     const [error, setError] = useState<string | null>(null)
     const [showAndroidPopup, setShowAndroidPopup] = useState(false)
     const [isAndroid, setIsAndroid] = useState(false)
+    const [paymentMethod, setPaymentMethod] = useState<'paystack' | 'stripe'>('paystack')
 
     useEffect(() => {
         setIsAndroid(isNativeApp())
     }, [])
 
-    async function handleSubscribe(plan: string) {
-        if (plan === 'free') return
-
-        // Show popup if on Android app
-        if (isAndroid) {
-            setShowAndroidPopup(true)
-            return
-        }
-
-        setLoading(plan)
+    async function handlePaystack() {
+        if (isAndroid) { setShowAndroidPopup(true); return }
+        setLoading('paystack')
         setError(null)
         try {
             const { data: { user } } = await supabase.auth.getUser()
@@ -87,6 +78,30 @@ export default function SubscribePage() {
         }
     }
 
+    async function handleStripe() {
+        setLoading('stripe')
+        setError(null)
+        try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) { router.push('/login'); return }
+            const res = await fetch('/api/stripe/initialize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: user.email, userId: user.id }),
+            })
+            const result = await res.json()
+            if (!res.ok || !result.url) {
+                setError(result.error || 'Failed to initialize payment. Try again.')
+                setLoading(null)
+                return
+            }
+            window.location.href = result.url
+        } catch {
+            setError('Something went wrong. Please try again.')
+            setLoading(null)
+        }
+    }
+
     function openWebsite() {
         window.open('https://naijabetai.com/subscribe', '_blank')
         setShowAndroidPopup(false)
@@ -95,7 +110,7 @@ export default function SubscribePage() {
     return (
         <main className="min-h-screen flex flex-col pb-24" style={{ background: '#0A0A0F' }}>
 
-            {/* ── Android Popup ── */}
+            {/* Android Popup */}
             {showAndroidPopup && (
                 <div className="fixed inset-0 z-50 flex items-end justify-center px-4 pb-8"
                     style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
@@ -110,11 +125,8 @@ export default function SubscribePage() {
                         }}
                         onClick={e => e.stopPropagation()}
                     >
-                        {/* Top accent line */}
                         <div className="absolute top-0 left-0 right-0 h-px rounded-t-3xl"
                             style={{ background: 'linear-gradient(90deg, transparent, rgba(34,197,94,0.5), transparent)' }} />
-
-                        {/* Icon */}
                         <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mx-auto mb-4"
                             style={{
                                 background: 'linear-gradient(135deg, #166534, #15803d)',
@@ -123,22 +135,17 @@ export default function SubscribePage() {
                             }}>
                             🌐
                         </div>
-
                         <h3 className="text-white font-black text-lg font-display text-center mb-2">
                             Subscribe on Our Website
                         </h3>
                         <p className="text-slate-400 text-sm text-center mb-6 leading-relaxed">
-                            To complete your subscription, visit our website and pay securely via Paystack. Your Pro access activates instantly after payment.
+                            To complete your subscription, visit our website and pay securely. Your Pro access activates instantly after payment.
                         </p>
-
-                        {/* Website URL pill */}
                         <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl mb-6"
                             style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.15)' }}>
                             <span className="text-green-400 text-xs">🔗</span>
                             <span className="text-green-400 text-xs font-black">naijabetai.com/subscribe</span>
                         </div>
-
-                        {/* Buttons */}
                         <button
                             onClick={openWebsite}
                             className="w-full py-4 rounded-2xl text-sm font-black text-white mb-3 transition-all active:scale-95"
@@ -163,7 +170,6 @@ export default function SubscribePage() {
             <div className="relative pt-14 pb-6 px-5 overflow-hidden">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-40 rounded-full blur-3xl pointer-events-none"
                     style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.15) 0%, transparent 70%)' }} />
-
                 <button
                     onClick={() => router.back()}
                     className="flex items-center gap-1.5 text-green-400 text-xs font-bold mb-6 relative"
@@ -173,7 +179,6 @@ export default function SubscribePage() {
                     </svg>
                     Back
                 </button>
-
                 <div className="relative">
                     <p className="text-green-400 text-[10px] font-black uppercase tracking-[0.15em] mb-2">Upgrade Your Game</p>
                     <h1 className="text-white text-2xl font-black leading-tight mb-2 font-display">
@@ -186,7 +191,6 @@ export default function SubscribePage() {
                 </div>
             </div>
 
-            {/* Content */}
             <div className="flex-1 px-5 space-y-4">
 
                 {error && (
@@ -196,7 +200,6 @@ export default function SubscribePage() {
                     </div>
                 )}
 
-                {/* Android banner */}
                 {isAndroid && (
                     <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
                         style={{ background: 'rgba(34,197,94,0.06)', border: '1px solid rgba(34,197,94,0.15)' }}>
@@ -240,6 +243,9 @@ export default function SubscribePage() {
                                 </span>
                                 <span className="text-slate-500 text-[10px]">{plan.period}</span>
                             </div>
+                            {plan.featured && (
+                                <p className="text-slate-500 text-[10px] mt-1">or $6 USD / month for diaspora</p>
+                            )}
                         </div>
 
                         <div className="space-y-2.5 mb-5">
@@ -257,31 +263,79 @@ export default function SubscribePage() {
                         </div>
 
                         {plan.id !== 'free' && (
-                            <button
-                                onClick={() => handleSubscribe(plan.id)}
-                                disabled={loading !== null}
-                                className="w-full py-3.5 rounded-xl text-sm font-black transition-all active:scale-95 text-white disabled:opacity-60"
-                                style={{
-                                    background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-                                    boxShadow: loading ? 'none' : '0 0 20px rgba(34,197,94,0.25)',
-                                }}
-                            >
-                                {loading === plan.id ? (
-                                    <span className="flex items-center justify-center gap-2">
-                                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                        Redirecting to Paystack...
-                                    </span>
-                                ) : isAndroid ? '🌐 Subscribe via Website' : '🔒 Subscribe via Paystack'}
-                            </button>
+                            <div className="space-y-3">
+                                {/* Payment method toggle */}
+                                <div className="flex rounded-xl overflow-hidden"
+                                    style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    <button
+                                        onClick={() => setPaymentMethod('paystack')}
+                                        className="flex-1 py-2.5 text-xs font-black transition-all"
+                                        style={{
+                                            background: paymentMethod === 'paystack' ? 'rgba(34,197,94,0.15)' : 'transparent',
+                                            color: paymentMethod === 'paystack' ? '#4ade80' : '#64748b',
+                                            borderRight: '1px solid rgba(255,255,255,0.08)',
+                                        }}
+                                    >
+                                        🇳🇬 Pay with Paystack
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentMethod('stripe')}
+                                        className="flex-1 py-2.5 text-xs font-black transition-all"
+                                        style={{
+                                            background: paymentMethod === 'stripe' ? 'rgba(99,102,241,0.15)' : 'transparent',
+                                            color: paymentMethod === 'stripe' ? '#818cf8' : '#64748b',
+                                        }}
+                                    >
+                                        🌍 Pay with Stripe
+                                    </button>
+                                </div>
+
+                                {/* Payment info */}
+                                <p className="text-center text-[10px] text-slate-600">
+                                    {paymentMethod === 'paystack'
+                                        ? '₦6,000/month · Nigerian cards & bank transfer'
+                                        : '$6 USD/month · International cards'}
+                                </p>
+
+                                {/* Pay button */}
+                                <button
+                                    onClick={paymentMethod === 'paystack' ? handlePaystack : handleStripe}
+                                    disabled={loading !== null}
+                                    className="w-full py-3.5 rounded-xl text-sm font-black transition-all active:scale-95 text-white disabled:opacity-60"
+                                    style={{
+                                        background: paymentMethod === 'paystack'
+                                            ? 'linear-gradient(135deg, #16a34a, #22c55e)'
+                                            : 'linear-gradient(135deg, #4f46e5, #6366f1)',
+                                        boxShadow: loading ? 'none' : paymentMethod === 'paystack'
+                                            ? '0 0 20px rgba(34,197,94,0.25)'
+                                            : '0 0 20px rgba(99,102,241,0.25)',
+                                    }}
+                                >
+                                    {loading === 'paystack' ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Redirecting to Paystack...
+                                        </span>
+                                    ) : loading === 'stripe' ? (
+                                        <span className="flex items-center justify-center gap-2">
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            Redirecting to Stripe...
+                                        </span>
+                                    ) : paymentMethod === 'paystack'
+                                        ? isAndroid ? '🌐 Subscribe via Website' : '🔒 Subscribe via Paystack'
+                                        : '🌍 Subscribe via Stripe'
+                                    }
+                                </button>
+                            </div>
                         )}
                     </div>
                 ))}
 
                 {/* Trust badges */}
                 <div className="flex justify-center gap-4 py-2">
-                    {TRUST_BADGES.map(b => (
-                        <span key={b} className="text-[10px] text-slate-600 font-medium">{b}</span>
-                    ))}
+                    <span className="text-[10px] text-slate-600 font-medium">🔒 Secure Payment</span>
+                    <span className="text-[10px] text-slate-600 font-medium">⚡ Instant Access</span>
+                    <span className="text-[10px] text-slate-600 font-medium">↩️ Cancel Anytime</span>
                 </div>
             </div>
 
