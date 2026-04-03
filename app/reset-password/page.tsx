@@ -1,16 +1,38 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 export default function ResetPasswordPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [password, setPassword] = useState('')
     const [confirm, setConfirm] = useState('')
     const [loading, setLoading] = useState(false)
+    const [verifying, setVerifying] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState(false)
+
+    useEffect(() => {
+        const token_hash = searchParams.get('token_hash')
+        const type = searchParams.get('type')
+
+        if (token_hash && type) {
+            supabase.auth.verifyOtp({
+                type: type as any,
+                token_hash,
+            }).then(({ error }) => {
+                if (error) {
+                    setError('Reset link is invalid or has expired. Please request a new one.')
+                }
+                setVerifying(false)
+            })
+        } else {
+            setVerifying(false)
+            setError('Invalid reset link.')
+        }
+    }, [])
 
     async function handleReset() {
         if (password !== confirm) {
@@ -37,6 +59,15 @@ export default function ResetPasswordPage() {
         setTimeout(() => router.push('/'), 2500)
     }
 
+    if (verifying) {
+        return (
+            <main className="min-h-screen flex items-center justify-center"
+                style={{ background: '#0A0A0F' }}>
+                <div className="w-8 h-8 border-2 border-green-500/40 border-t-green-400 rounded-full animate-spin" />
+            </main>
+        )
+    }
+
     return (
         <main className="min-h-screen flex flex-col items-center justify-center px-6"
             style={{ background: '#0A0A0F' }}>
@@ -59,6 +90,16 @@ export default function ResetPasswordPage() {
                         </div>
                         <p className="text-white font-black">Password updated!</p>
                         <p className="text-slate-500 text-sm">Redirecting you to the app...</p>
+                    </div>
+                ) : error && !password ? (
+                    <div className="text-center space-y-4">
+                        <p className="text-red-400 text-sm">{error}</p>
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="w-full font-black text-sm py-3.5 rounded-xl text-white"
+                            style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}>
+                            Back to Login
+                        </button>
                     </div>
                 ) : (
                     <div className="space-y-4">
