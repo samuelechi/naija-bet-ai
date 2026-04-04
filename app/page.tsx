@@ -31,59 +31,6 @@ const LEAGUE_MAP: Record<string, string[]> = {
   'Nations League': ['UEFA Nations League', 'Nations League'],
 }
 
-// ─── Mock match for testing (remove after April 5th) ─────────────────────────
-const MOCK_MATCHES: Match[] = [
-  {
-    id: 999999,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 1).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Premier League', code: 'PL' },
-    homeTeam: { id: 64, name: 'Liverpool FC', shortName: 'Liverpool', crest: 'https://crests.football-data.org/64.png' },
-    awayTeam: { id: 65, name: 'Manchester City FC', shortName: 'Man City', crest: 'https://crests.football-data.org/65.png' },
-  },
-  {
-    id: 999998,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Primera Division', code: 'PD' },
-    homeTeam: { id: 81, name: 'FC Barcelona', shortName: 'Barcelona', crest: 'https://crests.football-data.org/81.png' },
-    awayTeam: { id: 86, name: 'Real Madrid CF', shortName: 'Real Madrid', crest: 'https://crests.football-data.org/86.png' },
-  },
-  {
-    id: 999997,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 3).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Premier League', code: 'PL' },
-    homeTeam: { id: 66, name: 'Manchester United FC', shortName: 'Man United', crest: 'https://crests.football-data.org/66.png' },
-    awayTeam: { id: 57, name: 'Arsenal FC', shortName: 'Arsenal', crest: 'https://crests.football-data.org/57.png' },
-  },
-  {
-    id: 999996,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 4).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Bundesliga', code: 'BL1' },
-    homeTeam: { id: 5, name: 'FC Bayern München', shortName: 'Bayern', crest: 'https://crests.football-data.org/5.png' },
-    awayTeam: { id: 4, name: 'Borussia Dortmund', shortName: 'Dortmund', crest: 'https://crests.football-data.org/4.png' },
-  },
-  {
-    id: 999995,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 5).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Ligue 1', code: 'FL1' },
-    homeTeam: { id: 524, name: 'Paris Saint-Germain FC', shortName: 'PSG', crest: 'https://crests.football-data.org/524.png' },
-    awayTeam: { id: 548, name: 'AS Monaco FC', shortName: 'Monaco', crest: 'https://crests.football-data.org/548.png' },
-  },
-  {
-    id: 999994,
-    utcDate: new Date(Date.now() + 1000 * 60 * 60 * 6).toISOString(),
-    status: 'SCHEDULED',
-    competition: { name: 'Serie A', code: 'SA' },
-    homeTeam: { id: 108, name: 'FC Internazionale Milano', shortName: 'Inter', crest: 'https://crests.football-data.org/108.png' },
-    awayTeam: { id: 98, name: 'AC Milan', shortName: 'AC Milan', crest: 'https://crests.football-data.org/98.png' },
-  },
-]
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function Home() {
   const router = useRouter()
   const [matches, setMatches] = useState<Match[]>([])
@@ -93,15 +40,12 @@ export default function Home() {
   const [userPlan, setUserPlan] = useState('free')
 
   useEffect(() => {
-    // 1. Check if they are arriving from a password reset email
-    const hash = window.location.hash;
+    const hash = window.location.hash
     if (hash && hash.includes('type=recovery')) {
-      // Send them straight to the reset page with the hash!
-      router.push(`/reset-password${hash}`);
-      return;
+      router.push(`/reset-password${hash}`)
+      return
     }
 
-    // 2. Normal check: If no token and no session, kick to login
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.push('/login')
@@ -116,11 +60,9 @@ export default function Home() {
     try {
       const res = await fetch('/api/matches')
       const data = await res.json()
-      const realMatches = (data.matches || []).filter((m: Match) => ![999994, 999995, 999996, 999997, 999998, 999999].includes(m.id))
-      setMatches([...MOCK_MATCHES, ...realMatches])
+      setMatches(data.matches || [])
     } catch (err) {
       console.error('Failed to fetch matches:', err)
-      setMatches(MOCK_MATCHES)
     } finally {
       setLoading(false)
     }
@@ -258,7 +200,7 @@ export default function Home() {
               </p>
               <p className="text-slate-500 text-xs">
                 {activeFilter === 'All'
-                  ? 'Leagues are on international break — check back April 5th'
+                  ? "Check back later for today's predictions"
                   : 'Try a different league or check back later'}
               </p>
             </div>
