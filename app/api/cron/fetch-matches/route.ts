@@ -31,6 +31,7 @@ export async function GET(request: NextRequest) {
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    console.log('API KEY:', process.env.API_FOOTBALL_KEY?.slice(0, 5)) // ADD THIS LINE
 
     const supabase = getSupabaseAdmin()
     const today = new Date().toISOString().split('T')[0]
