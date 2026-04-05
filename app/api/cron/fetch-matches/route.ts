@@ -13,6 +13,24 @@ function mapStatus(status: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
 const shortName = (name: string) =>
     name.length > 12 ? name.split(' ').pop() ?? name : name
 
+const teamCrest = (apiId: number) =>
+    apiId ? `https://media.api-sports.io/football/teams/${apiId}.png` : ''
+
+async function fetchAllEvents(date: string): Promise<any[]> {
+    let allResults: any[] = []
+    let url = `${BASE_URL}/api/events/?date_from=${date}&date_to=${date}`
+
+    while (url) {
+        const res = await fetch(url, { headers: apiHeaders })
+        if (!res.ok) break
+        const data = await res.json()
+        allResults = [...allResults, ...(data.results || [])]
+        url = data.next || null
+    }
+
+    return allResults
+}
+
 export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -23,15 +41,7 @@ export async function GET(request: NextRequest) {
     const today = new Date().toISOString().split('T')[0]
 
     try {
-        // Fetch all today's matches in one request — Bzzoiro returns everything
-        const res = await fetch(
-            `${BASE_URL}/api/events/?date_from=${today}&date_to=${today}`,
-            { headers: apiHeaders }
-        )
-
-        if (!res.ok) throw new Error(`Bzzoiro error: ${res.status}`)
-        const data = await res.json()
-        const events = data.results || []
+        const events = await fetchAllEvents(today)
 
         if (events.length === 0) {
             return NextResponse.json({ inserted: 0, message: 'No matches today' })
@@ -42,11 +52,11 @@ export async function GET(request: NextRequest) {
             home_team_id: m.home_team_obj?.id ?? 0,
             home_team_name: m.home_team,
             home_team_short: shortName(m.home_team_obj?.short_name || m.home_team),
-            home_team_crest: '',
+            home_team_crest: teamCrest(m.home_team_obj?.api_id),
             away_team_id: m.away_team_obj?.id ?? 0,
             away_team_name: m.away_team,
             away_team_short: shortName(m.away_team_obj?.short_name || m.away_team),
-            away_team_crest: '',
+            away_team_crest: teamCrest(m.away_team_obj?.api_id),
             utc_date: m.event_date,
             status: mapStatus(m.status),
             competition_name: m.league?.name ?? 'Unknown',

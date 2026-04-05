@@ -13,6 +13,24 @@ function mapStatus(status: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
 const shortName = (name: string) =>
     name.length > 12 ? name.split(' ').pop() ?? name : name
 
+const teamCrest = (apiId: number) =>
+    apiId ? `https://media.api-sports.io/football/teams/${apiId}.png` : ''
+
+async function fetchAllEvents(date: string): Promise<any[]> {
+    let allResults: any[] = []
+    let url = `${BASE_URL}/api/events/?date_from=${date}&date_to=${date}`
+
+    while (url) {
+        const res = await fetch(url, { headers: apiHeaders })
+        if (!res.ok) break
+        const data = await res.json()
+        allResults = [...allResults, ...(data.results || [])]
+        url = data.next || null
+    }
+
+    return allResults
+}
+
 export async function getTodaysMatches(): Promise<Match[]> {
     const supabase = getSupabaseAdmin()
     const today = new Date().toISOString().split('T')[0]
@@ -52,13 +70,7 @@ export async function getTodaysMatches(): Promise<Match[]> {
     // No cache — fetch from Bzzoiro
     console.log('No matches in Supabase for today, fetching from Bzzoiro...')
     try {
-        const res = await fetch(
-            `${BASE_URL}/api/events/?date_from=${today}&date_to=${today}`,
-            { headers: apiHeaders }
-        )
-        if (!res.ok) throw new Error(`Bzzoiro error: ${res.status}`)
-        const data = await res.json()
-        const events = data.results || []
+        const events = await fetchAllEvents(today)
 
         const mappedMatches: Match[] = events.map((m: any): Match => ({
             id: m.id,
@@ -72,13 +84,13 @@ export async function getTodaysMatches(): Promise<Match[]> {
                 id: m.home_team_obj?.id ?? 0,
                 name: m.home_team,
                 shortName: shortName(m.home_team_obj?.short_name || m.home_team),
-                crest: '',
+                crest: teamCrest(m.home_team_obj?.api_id),
             },
             awayTeam: {
                 id: m.away_team_obj?.id ?? 0,
                 name: m.away_team,
                 shortName: shortName(m.away_team_obj?.short_name || m.away_team),
-                crest: '',
+                crest: teamCrest(m.away_team_obj?.api_id),
             },
         }))
 
@@ -89,11 +101,11 @@ export async function getTodaysMatches(): Promise<Match[]> {
                 home_team_id: m.home_team_obj?.id ?? 0,
                 home_team_name: m.home_team,
                 home_team_short: shortName(m.home_team_obj?.short_name || m.home_team),
-                home_team_crest: '',
+                home_team_crest: teamCrest(m.home_team_obj?.api_id),
                 away_team_id: m.away_team_obj?.id ?? 0,
                 away_team_name: m.away_team,
                 away_team_short: shortName(m.away_team_obj?.short_name || m.away_team),
-                away_team_crest: '',
+                away_team_crest: teamCrest(m.away_team_obj?.api_id),
                 utc_date: m.event_date,
                 status: mapStatus(m.status),
                 competition_name: m.league?.name ?? 'Unknown',
