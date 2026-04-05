@@ -1,30 +1,17 @@
 import { Match, FormResult, H2HResult } from '@/types'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
-const BASE_URL = 'https://v3.football.api-sports.io'
-const apiHeaders = { 'x-apisports-key': process.env.API_FOOTBALL_KEY! }
+const BASE_URL = 'https://sports.bzzoiro.com'
+const apiHeaders = { 'Authorization': `Token ${process.env.API_FOOTBALL_KEY}` }
 
-async function apiFetch(endpoint: string, params: Record<string, any> = {}) {
-    const url = new URL(`${BASE_URL}${endpoint}`)
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, String(v)))
-    const res = await fetch(url.toString(), { headers: apiHeaders })
-    if (!res.ok) throw new Error(`API-Football error: ${res.status}`)
-    return res.json()
-}
-
-function mapStatus(short: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
-    if (['FT', 'AET', 'PEN'].includes(short)) return 'FINISHED'
-    if (['NS', 'TBD', 'PST', 'CANC', 'ABD', 'AWD', 'WO'].includes(short)) return 'SCHEDULED'
-    return 'LIVE'
+function mapStatus(status: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
+    if (status === 'finished') return 'FINISHED'
+    if (status === 'inprogress') return 'LIVE'
+    return 'SCHEDULED'
 }
 
 const shortName = (name: string) =>
     name.length > 12 ? name.split(' ').pop() ?? name : name
-
-const LEAGUE_IDS = [
-    39, 140, 135, 78, 61, 2, 3, 848, 6, 20,
-    686, 307, 253, 88, 94, 203, 40, 48, 550, 890, 879
-]
 
 export async function getTodaysMatches(): Promise<Match[]> {
     const supabase = getSupabaseAdmin()
@@ -62,99 +49,82 @@ export async function getTodaysMatches(): Promise<Match[]> {
         }))
     }
 
-    // No cache — fetch from API-Football in parallel
-    console.log('No matches in Supabase for today, fetching from API-Football...')
+    // No cache — fetch from Bzzoiro
+    console.log('No matches in Supabase for today, fetching from Bzzoiro...')
     try {
-        const results = await Promise.allSettled(
-            LEAGUE_IDS.map(leagueId =>
-                apiFetch('/fixtures', {
-                    league: leagueId,
-                    date: today,
-                    season: 2025,
-                })
-            )
+        const res = await fetch(
+            `${BASE_URL}/api/events/?date_from=${today}&date_to=${today}`,
+            { headers: apiHeaders }
         )
+        if (!res.ok) throw new Error(`Bzzoiro error: ${res.status}`)
+        const data = await res.json()
+        const events = data.results || []
 
-        const seenIds = new Set<number>()
-        const allMatches: any[] = []
-        const mappedMatches: Match[] = []
-
-        results.forEach((result, i) => {
-            if (result.status === 'rejected') {
-                console.error(`League ${LEAGUE_IDS[i]} failed:`, result.reason)
-                return
-            }
-            for (const m of result.value.response || []) {
-                if (seenIds.has(m.fixture.id)) continue
-                seenIds.add(m.fixture.id)
-
-                allMatches.push({
-                    id: m.fixture.id,
-                    home_team_id: m.teams.home.id,
-                    home_team_name: m.teams.home.name,
-                    home_team_short: shortName(m.teams.home.name),
-                    home_team_crest: m.teams.home.logo,
-                    away_team_id: m.teams.away.id,
-                    away_team_name: m.teams.away.name,
-                    away_team_short: shortName(m.teams.away.name),
-                    away_team_crest: m.teams.away.logo,
-                    utc_date: m.fixture.date,
-                    status: mapStatus(m.fixture.status.short),
-                    competition_name: m.league.name,
-                    competition_code: String(m.league.id),
-                    match_date: today,
-                })
-
-                mappedMatches.push({
-                    id: m.fixture.id,
-                    utcDate: m.fixture.date,
-                    status: mapStatus(m.fixture.status.short),
-                    competition: {
-                        name: m.league.name,
-                        code: String(m.league.id),
-                    },
-                    homeTeam: {
-                        id: m.teams.home.id,
-                        name: m.teams.home.name,
-                        shortName: shortName(m.teams.home.name),
-                        crest: m.teams.home.logo,
-                    },
-                    awayTeam: {
-                        id: m.teams.away.id,
-                        name: m.teams.away.name,
-                        shortName: shortName(m.teams.away.name),
-                        crest: m.teams.away.logo,
-                    },
-                })
-            }
-        })
+        const mappedMatches: Match[] = events.map((m: any): Match => ({
+            id: m.id,
+            utcDate: m.event_date,
+            status: mapStatus(m.status),
+            competition: {
+                name: m.league?.name ?? 'Unknown',
+                code: String(m.league?.id ?? 0),
+            },
+            homeTeam: {
+                id: m.home_team_obj?.id ?? 0,
+                name: m.home_team,
+                shortName: shortName(m.home_team_obj?.short_name || m.home_team),
+                crest: '',
+            },
+            awayTeam: {
+                id: m.away_team_obj?.id ?? 0,
+                name: m.away_team,
+                shortName: shortName(m.away_team_obj?.short_name || m.away_team),
+                crest: '',
+            },
+        }))
 
         // Cache to Supabase
-        if (allMatches.length > 0) {
+        if (mappedMatches.length > 0) {
+            const rows = events.map((m: any) => ({
+                id: m.id,
+                home_team_id: m.home_team_obj?.id ?? 0,
+                home_team_name: m.home_team,
+                home_team_short: shortName(m.home_team_obj?.short_name || m.home_team),
+                home_team_crest: '',
+                away_team_id: m.away_team_obj?.id ?? 0,
+                away_team_name: m.away_team,
+                away_team_short: shortName(m.away_team_obj?.short_name || m.away_team),
+                away_team_crest: '',
+                utc_date: m.event_date,
+                status: mapStatus(m.status),
+                competition_name: m.league?.name ?? 'Unknown',
+                competition_code: String(m.league?.id ?? 0),
+                match_date: today,
+            }))
             await supabase.from('matches').delete().eq('match_date', today)
-            await supabase.from('matches').insert(allMatches)
-            console.log(`Cached ${allMatches.length} matches to Supabase`)
+            await supabase.from('matches').insert(rows)
+            console.log(`Cached ${mappedMatches.length} matches to Supabase`)
         }
 
         return mappedMatches
     } catch (err) {
-        console.error('Failed to fetch from API-Football:', err)
+        console.error('Failed to fetch from Bzzoiro:', err)
         return []
     }
 }
 
 export async function getTeamForm(teamId: number): Promise<FormResult[]> {
     try {
-        const data = await apiFetch('/fixtures', {
-            team: teamId,
-            last: 5,
-            season: 2025,
-        })
+        const res = await fetch(
+            `${BASE_URL}/api/events/?team=${teamId}&status=finished&limit=5`,
+            { headers: apiHeaders }
+        )
+        if (!res.ok) return []
+        const data = await res.json()
 
-        return (data.response || []).slice(-5).map((m: any): FormResult => {
-            const homeGoals = m.goals.home ?? 0
-            const awayGoals = m.goals.away ?? 0
-            const isHome = m.teams.home.id === teamId
+        return (data.results || []).slice(-5).map((m: any): FormResult => {
+            const homeGoals = m.home_score ?? 0
+            const awayGoals = m.away_score ?? 0
+            const isHome = m.home_team_obj?.id === teamId
             if (homeGoals === awayGoals) return 'D'
             if (homeGoals > awayGoals) return isHome ? 'W' : 'L'
             return isHome ? 'L' : 'W'
@@ -169,27 +139,35 @@ export async function getH2H(
     awayTeamId: number
 ): Promise<H2HResult[]> {
     try {
-        const data = await apiFetch('/fixtures/headtohead', {
-            h2h: `${homeTeamId}-${awayTeamId}`,
-            last: 5,
-            season: 2025,
-        })
+        const res = await fetch(
+            `${BASE_URL}/api/events/?team=${homeTeamId}&status=finished&limit=10`,
+            { headers: apiHeaders }
+        )
+        if (!res.ok) return []
+        const data = await res.json()
 
-        return (data.response || []).slice(0, 5).map((m: any): H2HResult => {
-            const homeGoals = m.goals.home ?? 0
-            const awayGoals = m.goals.away ?? 0
-            const isHome = m.teams.home.id === homeTeamId
+        const h2h = (data.results || [])
+            .filter((m: any) =>
+                (m.home_team_obj?.id === homeTeamId && m.away_team_obj?.id === awayTeamId) ||
+                (m.home_team_obj?.id === awayTeamId && m.away_team_obj?.id === homeTeamId)
+            )
+            .slice(0, 5)
+
+        return h2h.map((m: any): H2HResult => {
+            const homeGoals = m.home_score ?? 0
+            const awayGoals = m.away_score ?? 0
+            const isHome = m.home_team_obj?.id === homeTeamId
             let result: 'W' | 'D' | 'L'
             if (homeGoals === awayGoals) result = 'D'
             else if (homeGoals > awayGoals) result = isHome ? 'W' : 'L'
             else result = isHome ? 'L' : 'W'
             return {
-                date: new Date(m.fixture.date).toLocaleDateString('en-GB', {
+                date: new Date(m.event_date).toLocaleDateString('en-GB', {
                     month: 'short',
                     year: '2-digit',
                 }),
-                homeTeam: m.teams.home.name,
-                awayTeam: m.teams.away.name,
+                homeTeam: m.home_team,
+                awayTeam: m.away_team,
                 homeScore: homeGoals,
                 awayScore: awayGoals,
                 result,

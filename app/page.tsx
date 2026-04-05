@@ -8,27 +8,47 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 const FILTERS = [
-  'All', 'EPL', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
+  'All', 'EPL', 'Championship', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
   'UCL', 'UEL', 'UECL', 'AFCON', 'CAF', 'NPFL',
-  'Saudi', 'MLS', 'WSL', 'Nations League'
+  'Saudi', 'MLS', 'Scottish', 'Eredivisie', 'Portugal',
+  'Belgium', 'Turkey', 'Switzerland', 'Romania', 'Poland',
+  'Greece', 'Bulgaria', 'Sweden', 'Brazil', 'Mexico',
+  'Copa Lib', 'Copa Sud', 'World Cup', 'Friendly', 'Women'
 ]
 
 const LEAGUE_MAP: Record<string, string[]> = {
   'EPL': ['Premier League'],
-  'La Liga': ['Primera Division', 'La Liga'],
+  'Championship': ['Championship'],
+  'La Liga': ['La Liga'],
   'Serie A': ['Serie A'],
   'Bundesliga': ['Bundesliga'],
   'Ligue 1': ['Ligue 1'],
-  'UCL': ['UEFA Champions League'],
-  'UEL': ['UEFA Europa League'],
-  'UECL': ['UEFA Europa Conference League', 'Conference League'],
-  'AFCON': ['Africa Cup of Nations', 'AFCON'],
+  'UCL': ['Champions League'],
+  'UEL': ['Europa League'],
+  'UECL': ['Conference League'],
+  'AFCON': ['Africa Cup of Nations'],
   'CAF': ['CAF Champions League'],
-  'NPFL': ['NPFL', 'Nigerian Professional Football League'],
-  'Saudi': ['Saudi Professional League', 'Saudi Pro League'],
-  'MLS': ['MLS', 'Major League Soccer'],
-  'WSL': ["Women's Super League", 'WSL'],
-  'Nations League': ['UEFA Nations League', 'Nations League'],
+  'NPFL': ['Nigeria Premier Football League'],
+  'Saudi': ['Saudi Pro League'],
+  'MLS': ['MLS'],
+  'Scottish': ['Scottish Premiership'],
+  'Eredivisie': ['Eredivisie'],
+  'Portugal': ['Liga Portugal'],
+  'Belgium': ['Pro League'],
+  'Turkey': ['Trendyol Super Lig'],
+  'Switzerland': ['Super League'],
+  'Romania': ['Superliga'],
+  'Poland': ['Ekstraklasa'],
+  'Greece': ['Stoiximan Super League'],
+  'Bulgaria': ['Parva Liga'],
+  'Sweden': ['Allsvenskan'],
+  'Brazil': ['Brasileirão Serie A', 'Brasileirão Serie B', 'Copa do Brasil'],
+  'Mexico': ['Liga MX'],
+  'Copa Lib': ['Copa Libertadores'],
+  'Copa Sud': ['Copa Sudamericana'],
+  'World Cup': ['World Cup'],
+  'Friendly': ['International Friendly'],
+  'Women': ['Liga F'],
 }
 
 export default function Home() {
