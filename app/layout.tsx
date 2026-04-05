@@ -120,6 +120,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="NaijaBetAI" />
         <meta name="theme-color" content="#0A0A0F" />
         <meta name="msapplication-TileColor" content="#0A0A0F" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
         {/* Geo targeting Nigeria */}
         <meta name="geo.region" content="NG" />
