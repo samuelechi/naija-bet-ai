@@ -1,5 +1,3 @@
-
-
 'use client'
 
 import { useRouter } from 'next/navigation'
@@ -85,12 +83,22 @@ const DEFAULT_ACCENT = { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,
 
 export default function MatchCard({ match }: { match: Match }) {
     const router = useRouter()
-    const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
-    const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
-    const kickoff = new Date(match.utcDate).toLocaleTimeString('en-GB', {
+
+    const now = new Date()
+    const kickoffTime = new Date(match.utcDate)
+    const matchEndTime = new Date(kickoffTime.getTime() + 105 * 60 * 1000)
+
+    const isLive = now >= kickoffTime && now <= matchEndTime
+    const isFinished = now > matchEndTime
+
+    const kickoff = kickoffTime.toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit',
     })
-    const isLive = match.status === 'LIVE'
+
+    const statusLabel = isLive ? '● LIVE' : isFinished ? 'FT' : kickoff
+
+    const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
+    const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
 
     return (
         <div
@@ -117,9 +125,11 @@ export default function MatchCard({ match }: { match: Match }) {
                     </div>
                     <div className={`text-[9px] px-2.5 py-1 rounded-lg font-bold tracking-wider ${isLive
                         ? 'text-red-400 border border-red-500/30 bg-red-500/10'
-                        : 'text-slate-500 border border-slate-700/50 bg-slate-800/40'
+                        : isFinished
+                            ? 'text-green-500 border border-green-500/30 bg-green-500/10'
+                            : 'text-slate-500 border border-slate-700/50 bg-slate-800/40'
                         }`}>
-                        {isLive ? '● LIVE' : kickoff}
+                        {statusLabel}
                     </div>
                 </div>
 
