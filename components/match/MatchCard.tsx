@@ -1,3 +1,5 @@
+
+
 'use client'
 
 import { useRouter } from 'next/navigation'
@@ -5,26 +7,86 @@ import { Match } from '@/types'
 
 const LEAGUE_FLAGS: Record<string, string> = {
     'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-    'Primera Division': '🇪🇸',
+    'Championship': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
+    'La Liga': '🇪🇸',
     'Serie A': '🇮🇹',
     'Bundesliga': '🇩🇪',
-    'UEFA Champions League': '🏆',
-    'NPFL': '🇳🇬',
+    'Ligue 1': '🇫🇷',
+    'Champions League': '🏆',
+    'Europa League': '🏅',
+    'Conference League': '🥈',
+    'Nigeria Premier Football League': '🇳🇬',
+    'Africa Cup of Nations 2025': '🌍',
+    'CAF Champions League': '🌍',
+    'Saudi Pro League': '🇸🇦',
+    'MLS': '🇺🇸',
+    'Scottish Premiership': '🏴󠁧󠁢󠁳󠁣󠁴󠁿',
+    'Eredivisie': '🇳🇱',
+    'Liga Portugal Betclic': '🇵🇹',
+    'Pro League': '🇧🇪',
+    'Trendyol Super Lig': '🇹🇷',
+    'Super League': '🇨🇭',
+    'Superliga': '🇷🇴',
+    'Ekstraklasa': '🇵🇱',
+    'Stoiximan Super League': '🇬🇷',
+    'Parva Liga': '🇧🇬',
+    'Allsvenskan': '🇸🇪',
+    'Brasileirão Serie A': '🇧🇷',
+    'Brasileirão Serie B': '🇧🇷',
+    'Copa do Brasil': '🇧🇷',
+    'Liga MX Apertura': '🇲🇽',
+    'Liga MX Clausura': '🇲🇽',
+    'Copa Libertadores': '🏆',
+    'Copa Sudamericana': '🥈',
+    'World Cup 2026': '🌍',
+    'International Friendly Games': '🤝',
+    'Liga F': '👩',
 }
 
 const ACCENT_COLORS: Record<string, { from: string; to: string; glow: string }> = {
     'Premier League': { from: '#10B981', to: '#34D399', glow: 'rgba(16,185,129,0.15)' },
-    'Primera Division': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'Championship': { from: '#10B981', to: '#34D399', glow: 'rgba(16,185,129,0.15)' },
+    'La Liga': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
     'Serie A': { from: '#3B82F6', to: '#60A5FA', glow: 'rgba(59,130,246,0.15)' },
     'Bundesliga': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
-    'UEFA Champions League': { from: '#8B5CF6', to: '#A78BFA', glow: 'rgba(139,92,246,0.15)' },
-    'NPFL': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Ligue 1': { from: '#FFFFFF', to: '#CBD5E1', glow: 'rgba(255,255,255,0.10)' },
+    'Champions League': { from: '#8B5CF6', to: '#A78BFA', glow: 'rgba(139,92,246,0.15)' },
+    'Europa League': { from: '#F97316', to: '#FB923C', glow: 'rgba(249,115,22,0.15)' },
+    'Conference League': { from: '#06B6D4', to: '#22D3EE', glow: 'rgba(6,182,212,0.15)' },
+    'Nigeria Premier Football League': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Africa Cup of Nations 2025': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'CAF Champions League': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Saudi Pro League': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'MLS': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
+    'Scottish Premiership': { from: '#3B82F6', to: '#60A5FA', glow: 'rgba(59,130,246,0.15)' },
+    'Eredivisie': { from: '#F97316', to: '#FB923C', glow: 'rgba(249,115,22,0.15)' },
+    'Liga Portugal Betclic': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
+    'Pro League': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'Trendyol Super Lig': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
+    'Super League': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
+    'Superliga': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'Ekstraklasa': { from: '#EF4444', to: '#F87171', glow: 'rgba(239,68,68,0.15)' },
+    'Stoiximan Super League': { from: '#3B82F6', to: '#60A5FA', glow: 'rgba(59,130,246,0.15)' },
+    'Parva Liga': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Allsvenskan': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'Brasileirão Serie A': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Brasileirão Serie B': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Copa do Brasil': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Liga MX Apertura': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Liga MX Clausura': { from: '#22C55E', to: '#4ADE80', glow: 'rgba(34,197,94,0.15)' },
+    'Copa Libertadores': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'Copa Sudamericana': { from: '#3B82F6', to: '#60A5FA', glow: 'rgba(59,130,246,0.15)' },
+    'World Cup 2026': { from: '#F59E0B', to: '#FBBF24', glow: 'rgba(245,158,11,0.15)' },
+    'International Friendly Games': { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,0.15)' },
+    'Liga F': { from: '#EC4899', to: '#F472B6', glow: 'rgba(236,72,153,0.15)' },
 }
+
+const DEFAULT_ACCENT = { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,0.15)' }
 
 export default function MatchCard({ match }: { match: Match }) {
     const router = useRouter()
     const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
-    const accent = ACCENT_COLORS[match.competition.name] || ACCENT_COLORS['Premier League']
+    const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
     const kickoff = new Date(match.utcDate).toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit',
     })
@@ -67,7 +129,15 @@ export default function MatchCard({ match }: { match: Match }) {
                     <div className="flex items-center gap-2.5 flex-1">
                         {match.homeTeam.crest ? (
                             <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center p-1.5 shrink-0">
-                                <img src={match.homeTeam.crest} className="w-full h-full object-contain" alt="" />
+                                <img
+                                    src={match.homeTeam.crest}
+                                    className="w-full h-full object-contain"
+                                    alt=""
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                        e.currentTarget.parentElement!.innerHTML = '<span style="font-size:18px">⚽</span>'
+                                    }}
+                                />
                             </div>
                         ) : (
                             <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg shrink-0">⚽</div>
@@ -85,7 +155,15 @@ export default function MatchCard({ match }: { match: Match }) {
                         <span className="text-white text-sm font-bold leading-tight text-right">{match.awayTeam.shortName}</span>
                         {match.awayTeam.crest ? (
                             <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center p-1.5 shrink-0">
-                                <img src={match.awayTeam.crest} className="w-full h-full object-contain" alt="" />
+                                <img
+                                    src={match.awayTeam.crest}
+                                    className="w-full h-full object-contain"
+                                    alt=""
+                                    onError={(e) => {
+                                        e.currentTarget.style.display = 'none'
+                                        e.currentTarget.parentElement!.innerHTML = '<span style="font-size:18px">⚽</span>'
+                                    }}
+                                />
                             </div>
                         ) : (
                             <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg shrink-0">⚽</div>
