@@ -51,11 +51,50 @@ const LEAGUE_MAP: Record<string, string[]> = {
   'Women': ['Liga F'],
 }
 
+type StatusFilter = 'All' | 'Live' | 'Scheduled' | 'FT'
+
+function getMatchStatus(match: Match): 'Live' | 'Scheduled' | 'FT' {
+  const now = new Date()
+  const kickoff = new Date(match.utcDate)
+  const matchEnd = new Date(kickoff.getTime() + 105 * 60 * 1000)
+  if (now >= kickoff && now <= matchEnd) return 'Live'
+  if (now > matchEnd) return 'FT'
+  return 'Scheduled'
+}
+
+const STATUS_FILTERS: { label: string; value: StatusFilter; color: string; activeStyle: React.CSSProperties }[] = [
+  {
+    label: 'All',
+    value: 'All',
+    color: '#4b5563',
+    activeStyle: { background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', boxShadow: '0 0 16px rgba(34,197,94,0.3)' }
+  },
+  {
+    label: '● Live',
+    value: 'Live',
+    color: '#f87171',
+    activeStyle: { background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff', boxShadow: '0 0 16px rgba(239,68,68,0.35)' }
+  },
+  {
+    label: 'Scheduled',
+    value: 'Scheduled',
+    color: '#4b5563',
+    activeStyle: { background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', color: '#fff', boxShadow: '0 0 16px rgba(59,130,246,0.3)' }
+  },
+  {
+    label: 'FT',
+    value: 'FT',
+    color: '#4b5563',
+    activeStyle: { background: 'linear-gradient(135deg, #374151, #6b7280)', color: '#fff', boxShadow: '0 0 16px rgba(107,114,128,0.3)' }
+  },
+]
+
 export default function Home() {
   const router = useRouter()
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [activeFilter, setActiveFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
   const [winRate, setWinRate] = useState(0)
   const [userPlan, setUserPlan] = useState('free')
 
@@ -111,13 +150,22 @@ export default function Home() {
     }
   }
 
-  const filtered = activeFilter === 'All'
-    ? matches
-    : matches.filter(m =>
-      LEAGUE_MAP[activeFilter]?.some(l =>
+  const filtered = matches
+    .filter(m => {
+      if (statusFilter === 'All') return true
+      return getMatchStatus(m) === statusFilter
+    })
+    .filter(m => {
+      if (activeFilter === 'All') return true
+      return LEAGUE_MAP[activeFilter]?.some(l =>
         m.competition.name.toLowerCase().includes(l.toLowerCase())
       )
-    )
+    })
+
+  // Count per status for badges
+  const liveCounts = matches.filter(m => getMatchStatus(m) === 'Live').length
+  const scheduledCount = matches.filter(m => getMatchStatus(m) === 'Scheduled').length
+  const ftCount = matches.filter(m => getMatchStatus(m) === 'FT').length
 
   return (
     <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
@@ -169,7 +217,40 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Filter pills */}
+      {/* Status filter pills */}
+      <div className="px-5 pb-2">
+        <div className="flex gap-2">
+          {STATUS_FILTERS.map(({ label, value, activeStyle }) => {
+            const isActive = statusFilter === value
+            const count = value === 'Live' ? liveCounts : value === 'Scheduled' ? scheduledCount : value === 'FT' ? ftCount : null
+            return (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
+                style={isActive ? activeStyle : {
+                  background: '#111118',
+                  color: '#4b5563',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                }}
+              >
+                {label}
+                {count !== null && count > 0 && (
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                    style={{
+                      background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
+                      color: isActive ? '#fff' : '#6b7280'
+                    }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* League filter pills */}
       <div className="px-5 pb-3">
         <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
           {FILTERS.map(f => (
@@ -216,12 +297,16 @@ export default function Home() {
             </div>
             <div className="text-center">
               <p className="text-white font-bold mb-1">
-                {activeFilter === 'All' ? 'No matches today' : `No ${activeFilter} matches today`}
+                {statusFilter !== 'All'
+                  ? `No ${statusFilter} matches${activeFilter !== 'All' ? ` in ${activeFilter}` : ''}`
+                  : activeFilter === 'All' ? 'No matches today' : `No ${activeFilter} matches today`}
               </p>
               <p className="text-slate-500 text-xs">
-                {activeFilter === 'All'
-                  ? "Check back later for today's predictions"
-                  : 'Try a different league or check back later'}
+                {statusFilter !== 'All'
+                  ? 'Try a different status or league filter'
+                  : activeFilter === 'All'
+                    ? "Check back later for today's predictions"
+                    : 'Try a different league or check back later'}
               </p>
             </div>
           </div>
@@ -231,7 +316,7 @@ export default function Home() {
           <>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold">
-                Today's Predictions
+                {statusFilter === 'All' ? "Today's Predictions" : `${statusFilter} Matches`}
               </span>
               <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
               <span className="text-[10px] text-green-500 font-bold">{filtered.length} matches</span>
