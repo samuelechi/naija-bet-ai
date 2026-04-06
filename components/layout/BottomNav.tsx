@@ -6,7 +6,7 @@ type NavPage = 'home' | 'history' | 'profile'
 
 export default function BottomNav({ active }: { active: NavPage }) {
     const items = [
-        { page: 'home' as NavPage, label: 'Home', href: '/', icon: HomeIcon },
+        { page: 'home' as NavPage, label: 'Home', href: '/home', icon: HomeIcon },
         { page: 'history' as NavPage, label: 'History', href: '/history', icon: HistoryIcon },
         { page: 'profile' as NavPage, label: 'Profile', href: '/profile', icon: ProfileIcon },
     ]
@@ -14,11 +14,8 @@ export default function BottomNav({ active }: { active: NavPage }) {
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-center">
             <div className="w-full max-w-md mx-auto">
-                {/* Glass blur bar */}
                 <div className="relative bg-[#0A0A0F]/90 backdrop-blur-xl border-t border-white/6 flex justify-around items-center h-17 px-2">
-                    {/* Subtle top glow line */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-px bg-linear-to-r from-transparent via-green-500/40 to-transparent" />
-
                     {items.map((item) => {
                         const isActive = item.page === active
                         const Icon = item.icon
@@ -41,7 +38,6 @@ export default function BottomNav({ active }: { active: NavPage }) {
                         )
                     })}
                 </div>
-                {/* Safe area spacer */}
                 <div className="h-safe-bottom bg-[#0A0A0F]" />
             </div>
         </nav>

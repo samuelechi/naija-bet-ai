@@ -1,102 +1,153 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Match } from '@/types'
-import MatchCard from '@/components/match/MatchCard'
-import BottomNav from '@/components/layout/BottomNav'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const FILTERS = [
-  'All', 'EPL', 'Championship', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
-  'UCL', 'UEL', 'UECL', 'AFCON', 'CAF', 'NPFL',
-  'Saudi', 'MLS', 'Scottish', 'Eredivisie', 'Portugal',
-  'Belgium', 'Turkey', 'Switzerland', 'Romania', 'Poland',
-  'Greece', 'Bulgaria', 'Sweden', 'Brazil', 'Mexico',
-  'Copa Lib', 'Copa Sud', 'World Cup', 'Friendly', 'Women'
-]
+function ParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
 
-const LEAGUE_MAP: Record<string, string[]> = {
-  'EPL': ['Premier League'],
-  'Championship': ['Championship'],
-  'La Liga': ['La Liga'],
-  'Serie A': ['Serie A'],
-  'Bundesliga': ['Bundesliga'],
-  'Ligue 1': ['Ligue 1'],
-  'UCL': ['Champions League'],
-  'UEL': ['Europa League'],
-  'UECL': ['Conference League'],
-  'AFCON': ['Africa Cup of Nations'],
-  'CAF': ['CAF Champions League'],
-  'NPFL': ['Nigeria Premier Football League'],
-  'Saudi': ['Saudi Pro League'],
-  'MLS': ['MLS'],
-  'Scottish': ['Scottish Premiership'],
-  'Eredivisie': ['Eredivisie'],
-  'Portugal': ['Liga Portugal'],
-  'Belgium': ['Pro League'],
-  'Turkey': ['Trendyol Super Lig'],
-  'Switzerland': ['Super League'],
-  'Romania': ['Superliga'],
-  'Poland': ['Ekstraklasa'],
-  'Greece': ['Stoiximan Super League'],
-  'Bulgaria': ['Parva Liga'],
-  'Sweden': ['Allsvenskan'],
-  'Brazil': ['Brasileirão Serie A', 'Brasileirão Serie B', 'Copa do Brasil'],
-  'Mexico': ['Liga MX'],
-  'Copa Lib': ['Copa Libertadores'],
-  'Copa Sud': ['Copa Sudamericana'],
-  'World Cup': ['World Cup'],
-  'Friendly': ['International Friendly'],
-  'Women': ['Liga F'],
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')!
+    let animId: number
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth
+      canvas.height = canvas.offsetHeight
+    }
+    resize()
+    window.addEventListener('resize', resize)
+
+    type P = { x: number; y: number; vx: number; vy: number; r: number }
+    const pts: P[] = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 2 + 1,
+    }))
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      for (const p of pts) {
+        p.x += p.vx; p.y += p.vy
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = 'rgba(34,197,94,0.5)'
+        ctx.fill()
+      }
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const dx = pts[i].x - pts[j].x
+          const dy = pts[i].y - pts[j].y
+          const dist = Math.sqrt(dx * dx + dy * dy)
+          if (dist < 120) {
+            ctx.beginPath()
+            ctx.moveTo(pts[i].x, pts[i].y)
+            ctx.lineTo(pts[j].x, pts[j].y)
+            ctx.strokeStyle = `rgba(34,197,94,${0.15 * (1 - dist / 120)})`
+            ctx.lineWidth = 0.5
+            ctx.stroke()
+          }
+        }
+      }
+      animId = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize) }
+  }, [])
+
+  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 }
 
-type StatusFilter = 'All' | 'Live' | 'Scheduled' | 'FT'
+function Typewriter({ words }: { words: string[] }) {
+  const [idx, setIdx] = useState(0)
+  const [text, setText] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
-function getMatchStatus(match: Match): 'Live' | 'Scheduled' | 'FT' {
-  const now = new Date()
-  const kickoff = new Date(match.utcDate)
-  const matchEnd = new Date(kickoff.getTime() + 105 * 60 * 1000)
-  if (now >= kickoff && now <= matchEnd) return 'Live'
-  if (now > matchEnd) return 'FT'
-  return 'Scheduled'
+  useEffect(() => {
+    const word = words[idx]
+    const speed = deleting ? 40 : 80
+    const timeout = setTimeout(() => {
+      if (!deleting && text === word) {
+        setTimeout(() => setDeleting(true), 1800)
+        return
+      }
+      if (deleting && text === '') {
+        setDeleting(false)
+        setIdx(i => (i + 1) % words.length)
+        return
+      }
+      setText(t => deleting ? t.slice(0, -1) : word.slice(0, t.length + 1))
+    }, speed)
+    return () => clearTimeout(timeout)
+  }, [text, deleting, idx, words])
+
+  return (
+    <span style={{ color: '#22c55e' }}>
+      {text}
+      <span style={{ borderRight: '3px solid #22c55e', marginLeft: 2, animation: 'blink 1s step-end infinite' }} />
+    </span>
+  )
 }
 
-const STATUS_FILTERS: { label: string; value: StatusFilter; color: string; activeStyle: React.CSSProperties }[] = [
-  {
-    label: 'All',
-    value: 'All',
-    color: '#4b5563',
-    activeStyle: { background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', boxShadow: '0 0 16px rgba(34,197,94,0.3)' }
-  },
-  {
-    label: '● Live',
-    value: 'Live',
-    color: '#f87171',
-    activeStyle: { background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff', boxShadow: '0 0 16px rgba(239,68,68,0.35)' }
-  },
-  {
-    label: 'Scheduled',
-    value: 'Scheduled',
-    color: '#4b5563',
-    activeStyle: { background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', color: '#fff', boxShadow: '0 0 16px rgba(59,130,246,0.3)' }
-  },
-  {
-    label: 'FT',
-    value: 'FT',
-    color: '#4b5563',
-    activeStyle: { background: 'linear-gradient(135deg, #374151, #6b7280)', color: '#fff', boxShadow: '0 0 16px rgba(107,114,128,0.3)' }
-  },
-]
+function FloatingCard({ delay, style }: { delay: number; style?: React.CSSProperties }) {
+  return (
+    <div style={{
+      background: 'rgba(17,17,24,0.95)',
+      border: '1px solid rgba(34,197,94,0.2)',
+      borderRadius: 16,
+      padding: '12px 16px',
+      animation: `floatUp 6s ease-in-out ${delay}s infinite alternate`,
+      backdropFilter: 'blur(12px)',
+      ...style
+    }}>
+      <div style={{ fontSize: 9, color: '#4b5563', fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 8 }}>🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>Arsenal</span>
+        <span style={{ fontSize: 9, color: '#6b7280', fontWeight: 800, padding: '3px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: 6 }}>VS</span>
+        <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>Man City</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+        <span style={{ fontSize: 10, color: '#22c55e', fontWeight: 700 }}>AI Confidence: 87%</span>
+      </div>
+    </div>
+  )
+}
 
-export default function Home() {
+function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
+  const [val, setVal] = useState(0)
+  const ref = useRef<HTMLSpanElement>(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return
+      observer.disconnect()
+      let start = 0
+      const step = to / 60
+      const tick = () => {
+        start += step
+        if (start >= to) { setVal(to); return }
+        setVal(Math.floor(start))
+        requestAnimationFrame(tick)
+      }
+      tick()
+    }, { threshold: 0.5 })
+    if (ref.current) observer.observe(ref.current)
+    return () => observer.disconnect()
+  }, [to])
+
+  return <span ref={ref}>{val}{suffix}</span>
+}
+
+export default function LandingPage() {
   const router = useRouter()
-  const [matches, setMatches] = useState<Match[]>([])
-  const [loading, setLoading] = useState(true)
-  const [activeFilter, setActiveFilter] = useState('All')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('All')
-  const [winRate, setWinRate] = useState(0)
-  const [userPlan, setUserPlan] = useState('free')
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     const hash = window.location.hash
@@ -104,231 +155,226 @@ export default function Home() {
       router.push(`/reset-password${hash}`)
       return
     }
-
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session) {
-        router.push('/login')
-        return
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/home')
+      } else {
+        setChecking(false)
       }
-      fetchMatches()
-      loadUserStats(session.user.id)
     })
   }, [])
 
-  async function fetchMatches() {
-    try {
-      const res = await fetch('/api/matches')
-      const data = await res.json()
-      setMatches(data.matches || [])
-    } catch (err) {
-      console.error('Failed to fetch matches:', err)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  async function loadUserStats(userId: string) {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('plan')
-        .eq('id', userId)
-        .single()
-
-      const { data: predictions } = await supabase
-        .from('predictions')
-        .select('result')
-        .eq('user_id', userId)
-        .not('result', 'is', null)
-
-      const total = predictions?.length || 0
-      const won = predictions?.filter(p => p.result === 'WON').length || 0
-      setWinRate(total > 0 ? Math.round((won / total) * 100) : 0)
-      setUserPlan(profile?.plan || 'free')
-    } catch (e) {
-      console.error('Failed to load user stats:', e)
-    }
-  }
-
-  const filtered = matches
-    .filter(m => {
-      if (statusFilter === 'All') return true
-      return getMatchStatus(m) === statusFilter
-    })
-    .filter(m => {
-      if (activeFilter === 'All') return true
-      return LEAGUE_MAP[activeFilter]?.some(l =>
-        m.competition.name.toLowerCase().includes(l.toLowerCase())
-      )
-    })
-
-  // Count per status for badges
-  const liveCounts = matches.filter(m => getMatchStatus(m) === 'Live').length
-  const scheduledCount = matches.filter(m => getMatchStatus(m) === 'Scheduled').length
-  const ftCount = matches.filter(m => getMatchStatus(m) === 'FT').length
+  if (checking) return (
+    <div style={{ background: '#0A0A0F', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 32, height: 32, border: '2px solid #22c55e', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+    </div>
+  )
 
   return (
-    <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
+    <div style={{ background: '#0A0A0F', minHeight: '100vh', color: '#fff', fontFamily: "'Inter', sans-serif", overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes floatUp { 0%{transform:translateY(0px)} 100%{transform:translateY(-14px)} }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(32px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes glowPulse { 0%,100%{box-shadow:0 0 30px rgba(34,197,94,0.2)} 50%{box-shadow:0 0 60px rgba(34,197,94,0.5)} }
+        .fade-up { animation: fadeUp 0.7s ease forwards; opacity: 0; }
+        .d1{animation-delay:0.1s} .d2{animation-delay:0.2s} .d3{animation-delay:0.3s} .d4{animation-delay:0.4s} .d5{animation-delay:0.5s}
+        .cta-primary:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(34,197,94,0.5) !important; }
+        .cta-secondary:hover { transform:translateY(-2px); border-color:rgba(34,197,94,0.5) !important; }
+        .feature-card:hover { transform:translateY(-4px); border-color:rgba(34,197,94,0.3) !important; }
+        .market-pill:hover { background:rgba(34,197,94,0.12) !important; border-color:rgba(34,197,94,0.4) !important; color:#22c55e !important; }
+        * { box-sizing:border-box; }
+        a { text-decoration:none; }
+      `}</style>
 
-      {/* Header */}
-      <div className="relative pt-14 pb-5 px-5 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 rounded-full blur-3xl"
-            style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.18) 0%, transparent 70%)' }} />
+      {/* NAV */}
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(10,10,15,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#166534,#15803d)', border: '1px solid rgba(74,222,128,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚽</div>
+          <span style={{ fontWeight: 900, fontSize: 16, letterSpacing: '-0.5px', fontFamily: "'Clash Display', sans-serif" }}>NaijaBet<span style={{ color: '#22c55e' }}>AI</span></span>
         </div>
-
-        {/* Top row */}
-        <div className="flex items-center justify-between mb-5 relative">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-              style={{ background: 'linear-gradient(135deg, #166534, #15803d)', border: '1px solid rgba(74,222,128,0.2)' }}>
-              ⚽
-            </div>
-            <div>
-              <span className="text-white font-black text-base tracking-tight font-display">NaijaBetAI</span>
-              <div className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                <span className="text-[9px] text-green-400/70 uppercase tracking-wider font-bold">Live Predictions</span>
-              </div>
-            </div>
-          </div>
-          <button
-            onClick={() => router.push('/profile')}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
-            style={{ background: 'linear-gradient(135deg, #1f2937, #111827)', border: '1px solid rgba(255,255,255,0.08)' }}
-          >
-            😎
-          </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => router.push('/login')} style={{ padding: '8px 18px', borderRadius: 10, background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>Login</button>
+          <button onClick={() => router.push('/signup')} className="cta-primary" style={{ padding: '8px 18px', borderRadius: 10, background: 'linear-gradient(135deg,#16a34a,#22c55e)', border: 'none', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)', transition: 'all 0.2s ease' }}>Get Free Tips</button>
         </div>
+      </nav>
 
-        {/* Stats row */}
-        <div className="flex gap-2.5 relative">
-          {[
-            { label: 'Win Rate', value: `${winRate}%` },
-            { label: "Today's Matches", value: `${matches.length}` },
-            { label: 'Your Plan', value: userPlan === 'pro' ? 'PRO' : 'FREE' },
-          ].map(s => (
-            <div key={s.label} className="flex-1 rounded-2xl px-3 py-3"
-              style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">{s.label}</p>
-              <p className="font-black text-lg text-white leading-none font-display">{s.value}</p>
+      {/* HERO */}
+      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: 80, overflow: 'hidden' }}>
+        <ParticleCanvas />
+        <div style={{ position: 'absolute', top: '10%', left: '5%', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(22,163,74,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(34,197,94,0.07) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+        <div style={{ position: 'relative', width: '100%', maxWidth: 1200, margin: '0 auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, alignItems: 'center' }}>
+          {/* Left */}
+          <div>
+            <div className="fade-up d1" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 100, padding: '6px 14px', marginBottom: 24 }}>
+              <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#22c55e', animation: 'pulse 2s infinite' }} />
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.1em' }}>AI-Powered • Live Now</span>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Status filter pills */}
-      <div className="px-5 pb-2">
-        <div className="flex gap-2">
-          {STATUS_FILTERS.map(({ label, value, activeStyle }) => {
-            const isActive = statusFilter === value
-            const count = value === 'Live' ? liveCounts : value === 'Scheduled' ? scheduledCount : value === 'FT' ? ftCount : null
-            return (
-              <button
-                key={value}
-                onClick={() => setStatusFilter(value)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
-                style={isActive ? activeStyle : {
-                  background: '#111118',
-                  color: '#4b5563',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
-                {label}
-                {count !== null && count > 0 && (
-                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
-                    style={{
-                      background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
-                      color: isActive ? '#fff' : '#6b7280'
-                    }}>
-                    {count}
-                  </span>
-                )}
+            <h1 className="fade-up d2" style={{ fontSize: 'clamp(36px,5vw,58px)', fontWeight: 900, lineHeight: 1.08, letterSpacing: '-2px', marginBottom: 20, fontFamily: "'Clash Display', sans-serif" }}>
+              Stop Guessing.<br />
+              <Typewriter words={['Start Winning.', 'Bet Smarter.', 'Trust the AI.']} />
+            </h1>
+
+            <p className="fade-up d3" style={{ fontSize: 16, color: '#94a3b8', lineHeight: 1.7, marginBottom: 32, maxWidth: 440 }}>
+              Nigeria's first AI-powered football analysis app. Get data-driven predictions across <strong style={{ color: '#e2e8f0' }}>15 betting markets</strong> for EPL, UCL, La Liga & more.
+            </p>
+
+            <div className="fade-up d4" style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 48 }}>
+              <button onClick={() => router.push('/signup')} className="cta-primary" style={{ padding: '14px 28px', borderRadius: 12, background: 'linear-gradient(135deg,#16a34a,#22c55e)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 24px rgba(34,197,94,0.35)', transition: 'all 0.2s ease' }}>
+                🚀 Sign Up Free
               </button>
-            )
-          })}
-        </div>
-      </div>
+              <a href="/NaijaBetAI.apk" download className="cta-secondary" style={{ padding: '14px 28px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 0.2s ease' }}>
+                📲 Download APK
+              </a>
+            </div>
 
-      {/* League filter pills */}
-      <div className="px-5 pb-3">
-        <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-          {FILTERS.map(f => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className="px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
-              style={activeFilter === f ? {
-                background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-                color: '#fff',
-                boxShadow: '0 0 16px rgba(34,197,94,0.3)',
-              } : {
-                background: '#111118',
-                color: '#4b5563',
-                border: '1px solid rgba(255,255,255,0.06)',
-              }}
-            >
-              {f}
-            </button>
+            <div className="fade-up d5" style={{ display: 'flex', gap: 32 }}>
+              {[{ val: 76, suffix: '+', label: 'Matches Today' }, { val: 15, suffix: '', label: 'AI Markets' }, { val: 30, suffix: '+', label: 'Leagues' }].map(s => (
+                <div key={s.label}>
+                  <div style={{ fontSize: 28, fontWeight: 900, color: '#fff', fontFamily: "'Clash Display', sans-serif", lineHeight: 1 }}>
+                    <Counter to={s.val} suffix={s.suffix} />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: 4 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Right */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', minHeight: 540 }}>
+            <div style={{ position: 'absolute', bottom: '5%', left: '50%', transform: 'translateX(-50%)', width: 340, height: 340, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(34,197,94,0.15) 0%, transparent 70%)', animation: 'glowPulse 3s ease-in-out infinite', pointerEvents: 'none' }} />
+            <img src="/footballer.png" alt="NaijaBetAI" style={{ position: 'relative', zIndex: 2, height: 500, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 0 40px rgba(34,197,94,0.25))' }} />
+            <div style={{ position: 'absolute', top: '5%', right: '-2%', zIndex: 3 }}>
+              <FloatingCard delay={0} />
+            </div>
+            <div style={{ position: 'absolute', top: '38%', left: '-8%', zIndex: 3 }}>
+              <FloatingCard delay={1.5} style={{ borderColor: 'rgba(99,102,241,0.25)' }} />
+            </div>
+            <div style={{ position: 'absolute', bottom: '16%', right: '0%', zIndex: 3, background: 'rgba(17,17,24,0.95)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 14, padding: '12px 18px', animation: 'floatUp 4s ease-in-out 0.8s infinite alternate', backdropFilter: 'blur(12px)' }}>
+              <div style={{ fontSize: 9, color: '#4b5563', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>AI Confidence</div>
+              <div style={{ fontSize: 26, fontWeight: 900, color: '#22c55e', fontFamily: "'Clash Display', sans-serif", lineHeight: 1 }}>87%</div>
+              <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>Home Win</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FEATURES */}
+      <section style={{ padding: '100px 24px', maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ textAlign: 'center', marginBottom: 60 }}>
+          <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Why NaijaBetAI</div>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 900, letterSpacing: '-1px', fontFamily: "'Clash Display', sans-serif", margin: 0 }}>Built for Nigerian Bettors</h2>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+          {[
+            { icon: '🤖', title: 'Claude AI Engine', desc: "Powered by Anthropic's Claude — the most advanced AI available. Real reasoning, not just stats, behind every prediction." },
+            { icon: '⚡', title: 'Real-Time Updates', desc: 'Live match data refreshed automatically. Fetch Matches, Update Results, Morning Alerts — all running on autopilot.' },
+            { icon: '🌍', title: '30+ Leagues', desc: 'EPL, UCL, La Liga, NPFL, CAF, AFCON and more. Every league Nigerian bettors care about, fully covered.' },
+            { icon: '📊', title: '15 AI Markets', desc: '1X2, BTTS, Over/Under, Correct Score, HT/FT, Asian Handicap, Double Chance and more — per match.' },
+            { icon: '🔔', title: 'Push Notifications', desc: 'Morning tip alerts, live match updates, and expiry reminders delivered straight to your device.' },
+            { icon: '📱', title: 'Android + iPhone', desc: 'Download the APK for Android. Full PWA support for iPhone — add to home screen and use like a native app.' },
+          ].map(f => (
+            <div key={f.title} className="feature-card" style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 20, padding: '28px 24px', cursor: 'default', transition: 'all 0.25s ease' }}>
+              <div style={{ fontSize: 34, marginBottom: 16 }}>{f.icon}</div>
+              <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 10, color: '#fff', margin: '0 0 10px' }}>{f.title}</h3>
+              <p style={{ fontSize: 14, color: '#64748b', lineHeight: 1.65, margin: 0 }}>{f.desc}</p>
+            </div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Divider */}
-      <div className="mx-5 mb-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
-
-      {/* Match list */}
-      <div className="flex-1 px-5 pb-28 space-y-3 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
-
-        {loading && (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="h-28 rounded-2xl animate-pulse"
-                style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.04)' }} />
+      {/* MARKETS */}
+      <section style={{ padding: '80px 24px', background: 'rgba(34,197,94,0.02)', borderTop: '1px solid rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>AI Markets</div>
+          <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 900, letterSpacing: '-1px', fontFamily: "'Clash Display', sans-serif", marginBottom: 40 }}>15 Markets Per Match</h2>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+            {['1X2 Result', 'Both Teams Score', 'Over/Under 2.5', 'Correct Score', 'HT/FT', 'Asian Handicap', 'Double Chance', 'Draw No Bet', 'First Goalscorer', 'Anytime Goalscorer', 'Clean Sheet', 'Over/Under 1.5', 'Over/Under 3.5', 'Match Result + BTTS', 'Cards & Corners'].map(m => (
+              <div key={m} className="market-pill" style={{ padding: '9px 18px', borderRadius: 100, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', fontSize: 13, fontWeight: 700, color: '#94a3b8', cursor: 'default', transition: 'all 0.2s ease' }}>{m}</div>
             ))}
           </div>
-        )}
+        </div>
+      </section>
 
-        {!loading && filtered.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-              style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
-              ⚽
+      {/* PRICING */}
+      <section style={{ padding: '100px 24px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 60 }}>
+            <div style={{ fontSize: 11, color: '#22c55e', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 12 }}>Pricing</div>
+            <h2 style={{ fontSize: 'clamp(28px,4vw,44px)', fontWeight: 900, letterSpacing: '-1px', fontFamily: "'Clash Display', sans-serif", margin: 0 }}>Choose Your Plan</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 20 }}>
+            {/* Free */}
+            <div style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 24, padding: '36px 28px' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>Free</div>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#fff', fontFamily: "'Clash Display', sans-serif", lineHeight: 1, marginBottom: 6 }}>₦0</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginBottom: 28 }}>Forever free</div>
+              {['3 AI predictions/day', '5 markets per match', 'EPL & UCL only', 'Standard support'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ color: '#22c55e', fontSize: 14, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: 14, color: '#94a3b8' }}>{f}</span>
+                </div>
+              ))}
+              <button onClick={() => router.push('/signup')} style={{ width: '100%', marginTop: 28, padding: '13px', borderRadius: 12, background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s ease' }}>Get Started Free</button>
             </div>
-            <div className="text-center">
-              <p className="text-white font-bold mb-1">
-                {statusFilter !== 'All'
-                  ? `No ${statusFilter} matches${activeFilter !== 'All' ? ` in ${activeFilter}` : ''}`
-                  : activeFilter === 'All' ? 'No matches today' : `No ${activeFilter} matches today`}
-              </p>
-              <p className="text-slate-500 text-xs">
-                {statusFilter !== 'All'
-                  ? 'Try a different status or league filter'
-                  : activeFilter === 'All'
-                    ? "Check back later for today's predictions"
-                    : 'Try a different league or check back later'}
-              </p>
+
+            {/* Pro */}
+            <div style={{ background: 'linear-gradient(145deg,#0c1f12,#111118)', border: '1px solid rgba(34,197,94,0.35)', borderRadius: 24, padding: '36px 28px', position: 'relative', animation: 'glowPulse 3s ease-in-out infinite' }}>
+              <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#16a34a,#22c55e)', borderRadius: 100, padding: '5px 18px', fontSize: 11, fontWeight: 800, color: '#fff', textTransform: 'uppercase', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>⭐ Most Popular</div>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#22c55e', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 10 }}>Pro</div>
+              <div style={{ fontSize: 44, fontWeight: 900, color: '#fff', fontFamily: "'Clash Display', sans-serif", lineHeight: 1, marginBottom: 6 }}>₦6,000</div>
+              <div style={{ fontSize: 13, color: '#64748b', marginBottom: 28 }}>per month</div>
+              {['Unlimited AI predictions', 'All 15 markets', '30+ leagues covered', 'Push notifications', 'Priority support', 'History & win rate stats'].map(f => (
+                <div key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                  <span style={{ color: '#22c55e', fontSize: 14, fontWeight: 700 }}>✓</span>
+                  <span style={{ fontSize: 14, color: '#e2e8f0' }}>{f}</span>
+                </div>
+              ))}
+              <button onClick={() => router.push('/signup')} className="cta-primary" style={{ width: '100%', marginTop: 28, padding: '13px', borderRadius: 12, background: 'linear-gradient(135deg,#16a34a,#22c55e)', border: 'none', color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 20px rgba(34,197,94,0.3)', transition: 'all 0.2s ease' }}>Start Pro Plan</button>
             </div>
           </div>
-        )}
+        </div>
+      </section>
 
-        {!loading && filtered.length > 0 && (
-          <>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold">
-                {statusFilter === 'All' ? "Today's Predictions" : `${statusFilter} Matches`}
-              </span>
-              <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
-              <span className="text-[10px] text-green-500 font-bold">{filtered.length} matches</span>
-            </div>
-            {filtered.map(match => (
-              <MatchCard key={match.id} match={match} />
-            ))}
-          </>
-        )}
-      </div>
+      {/* FINAL CTA */}
+      <section style={{ padding: '100px 24px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 400, borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(22,163,74,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative' }}>
+          <h2 style={{ fontSize: 'clamp(32px,5vw,54px)', fontWeight: 900, letterSpacing: '-1.5px', fontFamily: "'Clash Display', sans-serif", marginBottom: 16 }}>
+            Ready to Bet <span style={{ color: '#22c55e' }}>Smarter?</span>
+          </h2>
+          <p style={{ fontSize: 16, color: '#64748b', maxWidth: 440, margin: '0 auto 36px', lineHeight: 1.7 }}>
+            Join thousands of Nigerian bettors already using AI to make smarter decisions every matchday.
+          </p>
+          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button onClick={() => router.push('/signup')} className="cta-primary" style={{ padding: '16px 36px', borderRadius: 14, background: 'linear-gradient(135deg,#16a34a,#22c55e)', border: 'none', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', boxShadow: '0 4px 24px rgba(34,197,94,0.4)', transition: 'all 0.2s ease' }}>
+              🚀 Create Free Account
+            </button>
+            <a href="/NaijaBetAI.apk" download style={{ padding: '16px 36px', borderRadius: 14, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, transition: 'all 0.2s ease' }}>
+              📲 Download Android APK
+            </a>
+          </div>
+        </div>
+      </section>
 
-      <BottomNav active="home" />
-    </main>
+      {/* FOOTER */}
+      <footer style={{ borderTop: '1px solid rgba(255,255,255,0.05)', padding: '28px 24px', maxWidth: 1200, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#166534,#15803d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>⚽</div>
+          <span style={{ fontWeight: 900, fontSize: 14, fontFamily: "'Clash Display', sans-serif" }}>NaijaBet<span style={{ color: '#22c55e' }}>AI</span></span>
+        </div>
+        <div style={{ display: 'flex', gap: 20 }}>
+          {[['Privacy', '/privacy-policy'], ['Login', '/login'], ['Sign Up', '/signup']].map(([label, href]) => (
+            <button key={label} onClick={() => router.push(href)} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>{label}</button>
+          ))}
+        </div>
+        <div style={{ fontSize: 12, color: '#374151' }}>© 2026 NaijaBetAI. All rights reserved.</div>
+      </footer>
+    </div>
   )
 }
