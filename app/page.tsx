@@ -97,7 +97,7 @@ function Typewriter({ words }: { words: string[] }) {
   return (
     <span className="text-green-500 relative inline-block">
       {text}
-      <span className="absolute -right-2 top-1 bottom-1 w-0.75 bg-green-500 animate-pulse" />
+      <span className="absolute -right-2 top-1 bottom-1 w-[3px] bg-green-500 animate-pulse" />
     </span>
   )
 }
@@ -193,7 +193,7 @@ export default function LandingPage() {
           onClick={() => {/* Trigger PWA install modal or logic here */ }}
           className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.15)] hover:shadow-[0_4px_30px_rgba(34,197,94,0.3)] hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
         >
-          <div className="w-10 h-10 rounded-full bg-linear-to-r from-green-600 to-green-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-green-600 to-green-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
             {/* Play Icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" className="ml-0.5">
               <path d="M8 5V19L19 12L8 5Z" fill="white" />
@@ -209,21 +209,21 @@ export default function LandingPage() {
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-40 px-5 md:px-8 py-4 flex items-center justify-between bg-[#0A0A0F]/70 backdrop-blur-2xl border-b border-white/5">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-linear-to-br from-green-600 to-green-800 border border-green-400/20 flex items-center justify-center text-sm shadow-[0_0_15px_rgba(34,197,94,0.3)]">⚽</div>
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-green-600 to-green-800 border border-green-400/20 flex items-center justify-center text-sm shadow-[0_0_15px_rgba(34,197,94,0.3)]">⚽</div>
           <span className="font-black text-lg tracking-tight">NaijaBet<span className="text-green-500">AI</span></span>
         </div>
         <div className="flex gap-2.5">
           <button onClick={() => router.push('/login')} className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold transition-all">Login</button>
-          <button onClick={() => router.push('/signup')} className="px-4 py-2 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-xs font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all">Get Free Tips</button>
+          <button onClick={() => router.push('/signup')} className="px-4 py-2 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-xs font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all">Get Free Tips</button>
         </div>
       </nav>
 
       {/* HERO (Responsive Grid & Clamped Typography) */}
-      <section className="relative min-h-svh flex items-center pt-24 pb-12 overflow-hidden">
+      <section className="relative min-h-[100svh] flex items-center pt-24 pb-12 overflow-hidden">
         <ParticleCanvas />
 
-        <div className="absolute top-1/4 left-0 w-75 h-75 bg-green-500/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none z-0" />
-        <div className="absolute bottom-0 right-0 w-100 h-100 bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
+        <div className="absolute top-1/4 left-0 w-[300px] h-[300px] bg-green-500/10 rounded-full blur-[80px] md:blur-[120px] pointer-events-none z-0" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-5 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-8 items-center">
 
@@ -234,7 +234,6 @@ export default function LandingPage() {
               <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">AI-Powered • Live Now</span>
             </div>
 
-            {/* FIX: Dynamic clamping for perfectly scaled headers on mobile vs desktop */}
             <h1 className="animate-fade-up delay-200 text-[clamp(2.75rem,8vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-4 md:mb-6">
               Stop Guessing.<br />
               <Typewriter words={['Start Winning.', 'Bet Smarter.', 'Trust the AI.']} />
@@ -245,7 +244,7 @@ export default function LandingPage() {
             </p>
 
             <div className="animate-fade-up delay-400 flex flex-col sm:flex-row gap-3 mb-8 md:mb-10">
-              <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
+              <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
                 🚀 Sign Up Free
               </button>
               <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
@@ -253,7 +252,6 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Stats scaled down slightly on mobile */}
             <div className="animate-fade-up delay-500 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
               {[
                 { val: 76, suffix: '+', label: 'Matches Today' },
@@ -269,16 +267,19 @@ export default function LandingPage() {
           </div>
 
           {/* Right Visuals */}
-          <div className="relative flex justify-center items-end min-h-87.5 md:min-h-125 animate-fade-up delay-400">
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-62.5 h-62.5 bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
+          <div className="relative flex justify-center items-end min-h-[400px] md:min-h-[500px] animate-fade-up delay-400">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[250px] h-[250px] bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
 
-            <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-75 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
+            <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-[350px] md:h-[450px] lg:h-[550px] object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
 
-            {/* Hidden on very small screens to avoid clutter, visible on anything larger than an iPhone mini */}
-            <FloatingCard className="hidden sm:block absolute top-4 -right-2 md:top-10 md:-right-8 z-20 scale-75 md:scale-100 origin-right" />
-            <FloatingCard delayClass="delay-1500" className="hidden sm:block absolute top-1/2 -left-2 md:-left-8 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-75 md:scale-100 origin-left" />
+            {/* Top Right Card (Pointing) */}
+            <FloatingCard className="absolute top-4 -right-1 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.70] md:scale-100 origin-right" />
 
-            <div className="absolute bottom-6 -right-2 md:bottom-16 md:-right-8 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-85 md:scale-100 origin-bottom-right">
+            {/* Bottom Left Card (Leg) */}
+            <FloatingCard delayClass="delay-1500" className="absolute bottom-20 -left-6 md:bottom-28 md:-left-8 lg:-left-12 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.70] md:scale-100 origin-left" />
+
+            {/* Bottom Right Big Stat Card (Original Location) */}
+            <div className="absolute bottom-4 -right-2 md:bottom-16 md:-right-8 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.80] md:scale-100 origin-bottom-right">
               <div className="text-[8px] md:text-[9px] text-slate-400 font-black tracking-widest uppercase mb-1">AI Confidence</div>
               <div className="text-3xl md:text-4xl font-black text-green-500 leading-none mb-1">87%</div>
               <div className="text-[10px] md:text-xs font-bold text-white">Home Win</div>
@@ -312,7 +313,7 @@ export default function LandingPage() {
       </section>
 
       {/* MARKETS */}
-      <section className="py-16 md:py-24 px-5 bg-linear-to-b from-[#0A0A0F] via-green-950/10 to-[#0A0A0F] border-y border-white/5 relative z-10">
+      <section className="py-16 md:py-24 px-5 bg-gradient-to-b from-[#0A0A0F] via-green-950/10 to-[#0A0A0F] border-y border-white/5 relative z-10">
         <div className="max-w-4xl mx-auto text-center relative">
           <div className="text-[10px] md:text-[11px] text-green-500 font-black uppercase tracking-widest mb-3">AI Engine</div>
           <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-8 md:mb-12">15 Markets Per Match</h2>
@@ -336,7 +337,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center">
 
             {/* Free Tier */}
-            <div className="bg-[#111118]/80 backdrop-blur-md border border-white/10 rounded-4xl p-8 md:p-10 hover:border-white/20 transition-colors">
+            <div className="bg-[#111118]/80 backdrop-blur-md border border-white/10 rounded-[2rem] p-8 md:p-10 hover:border-white/20 transition-colors">
               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Free</div>
               <div className="text-4xl md:text-5xl font-black text-white leading-none mb-2">₦0</div>
               <div className="text-sm text-slate-400 mb-8">Forever free</div>
@@ -354,8 +355,8 @@ export default function LandingPage() {
             </div>
 
             {/* Pro Tier */}
-            <div className="relative bg-linear-to-br from-[#0c1f12] to-[#111118] border border-green-500/40 rounded-4xl p-8 md:p-10 shadow-[0_0_40px_rgba(34,197,94,0.1)] md:scale-105">
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-linear-to-r from-green-600 to-green-400 rounded-full px-4 py-1.5 text-[10px] font-black text-white uppercase tracking-widest shadow-lg whitespace-nowrap">
+            <div className="relative bg-gradient-to-br from-[#0c1f12] to-[#111118] border border-green-500/40 rounded-[2rem] p-8 md:p-10 shadow-[0_0_40px_rgba(34,197,94,0.1)] md:scale-105">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-gradient-to-r from-green-600 to-green-400 rounded-full px-4 py-1.5 text-[10px] font-black text-white uppercase tracking-widest shadow-lg whitespace-nowrap">
                 ⭐ Most Popular
               </div>
               <div className="text-[10px] font-black text-green-500 uppercase tracking-widest mb-3">Premium Pro</div>
@@ -369,7 +370,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => router.push('/signup')} className="w-full py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm font-black text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.5)] hover:-translate-y-1 transition-all">
+              <button onClick={() => router.push('/signup')} className="w-full py-4 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-sm font-black text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.5)] hover:-translate-y-1 transition-all">
                 Start Pro Plan
               </button>
             </div>
@@ -380,7 +381,7 @@ export default function LandingPage() {
 
       {/* FINAL CTA */}
       <section className="py-20 md:py-24 px-5 text-center relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-75 md:w-150 h-75 md:h-150 bg-green-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[600px] h-[300px] md:h-[600px] bg-green-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
 
         <div className="relative z-10 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight mb-5 md:mb-6">
@@ -390,7 +391,7 @@ export default function LandingPage() {
             Join thousands of Nigerian bettors already using the NaijaBetAI Oracle to make data-driven decisions every matchday.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-            <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
+            <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
               🚀 Create Free Account
             </button>
             <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
@@ -404,7 +405,7 @@ export default function LandingPage() {
       <footer className="border-t border-white/10 py-8 px-5 relative z-10 bg-[#0A0A0F]">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-linear-to-br from-green-600 to-green-800 flex items-center justify-center text-xs">⚽</div>
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-600 to-green-800 flex items-center justify-center text-xs">⚽</div>
             <span className="font-black text-base">NaijaBet<span className="text-green-500">AI</span></span>
           </div>
 
