@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next'
 import './globals.css'
 import OneSignalInit from '../components/OneSignalInit'
@@ -100,7 +101,6 @@ export default function RootLayout({
   return (
     <html lang="en-NG">
       <head>
-        {/* Fonts */}
         <link rel="preconnect" href="https://api.fontshare.com" />
         <link
           href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap"
@@ -112,8 +112,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-
-        {/* PWA */}
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -122,8 +120,6 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#0A0A0F" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
-        {/* Geo targeting Nigeria */}
         <meta name="geo.region" content="NG" />
         <meta name="geo.placename" content="Nigeria" />
         <meta name="language" content="English" />
@@ -132,18 +128,14 @@ export default function RootLayout({
         <meta name="coverage" content="Nigeria" />
         <meta name="distribution" content="global" />
         <meta name="rating" content="general" />
-
-        {/* Structured Data */}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
         />
       </head>
-      <body style={{ fontFamily: "'Inter', sans-serif" }}>
+      <body style={{ fontFamily: "'Inter', sans-serif", margin: 0, padding: 0, background: '#0A0A0F' }}>
         <OneSignalInit />
-        <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh' }}>
-          {children}
-        </div>
+        {children}
       </body>
     </html>
   )
