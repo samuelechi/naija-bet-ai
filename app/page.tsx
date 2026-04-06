@@ -234,6 +234,7 @@ export default function LandingPage() {
               <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">AI-Powered • Live Now</span>
             </div>
 
+            {/* FIX: Dynamic clamping for perfectly scaled headers on mobile vs desktop */}
             <h1 className="animate-fade-up delay-200 text-[clamp(2.75rem,8vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-4 md:mb-6">
               Stop Guessing.<br />
               <Typewriter words={['Start Winning.', 'Bet Smarter.', 'Trust the AI.']} />
@@ -252,6 +253,7 @@ export default function LandingPage() {
               </a>
             </div>
 
+            {/* Stats scaled down slightly on mobile */}
             <div className="animate-fade-up delay-500 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
               {[
                 { val: 76, suffix: '+', label: 'Matches Today' },
@@ -267,26 +269,19 @@ export default function LandingPage() {
           </div>
 
           {/* Right Visuals */}
-          <div className="relative flex justify-center items-center min-h-100 md:min-h-125 animate-fade-up delay-400">
-            {/* Core glow behind image */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-62.5 h-62.5 bg-green-500/10 rounded-full blur-[60px] pointer-events-none z-0" />
+          <div className="relative flex justify-center items-end min-h-100 md:min-h-125 animate-fade-up delay-400 overflow-visible">
+            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-62.5 h-62.5 bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
 
-            {/* CONCENTRIC RADAR CIRCLES */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-70 h-70 md:w-95 md:h-95 rounded-full border border-green-500/30 pointer-events-none z-0" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-105 h-105 md:w-145 md:h-145 rounded-full border border-green-500/20 pointer-events-none z-0" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-140 h-140 md:w-195 md:h-195 rounded-full border border-green-500/10 pointer-events-none z-0" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-175 h-175 md:w-245 md:h-245 rounded-full border border-green-500/5 pointer-events-none z-0 hidden sm:block" />
+            <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
 
-            <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)] pt-12 md:pt-20" />
+            {/* 1. Top Right Card (Pointing) */}
+            <FloatingCard className="absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
 
-            {/* Top Right Card (Pointing) */}
-            <FloatingCard className="hidden sm:block absolute top-4 -right-1 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.70] md:scale-100 origin-right" />
+            {/* 2. Bottom Left Card (Corrected Positioning at Left Foot) */}
+            <FloatingCard delayClass="[animation-delay:1s]" className="absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
 
-            {/* Bottom Left Card (Leg) */}
-            <FloatingCard delayClass="delay-1500" className="hidden sm:block absolute bottom-12 -left-6 md:bottom-28 md:-left-8 lg:-left-12 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.70] md:scale-100 origin-left" />
-
-            {/* Bottom Right Big Stat Card (Original Location) */}
-            <div className="absolute bottom-0 -right-2 md:bottom-16 md:-right-8 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.80] md:scale-100 origin-bottom-right">
+            {/* 3. Bottom Right Big Stat Card (Confidence) */}
+            <div className="absolute bottom-2 -right-4 md:bottom-16 md:-right-12 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.75] md:scale-100 origin-bottom-right">
               <div className="text-[8px] md:text-[9px] text-slate-400 font-black tracking-widest uppercase mb-1">AI Confidence</div>
               <div className="text-3xl md:text-4xl font-black text-green-500 leading-none mb-1">87%</div>
               <div className="text-[10px] md:text-xs font-bold text-white">Home Win</div>
