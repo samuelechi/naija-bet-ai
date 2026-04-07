@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation'
 import { Match } from '@/types'
 
+// ... (Keep your LEAGUE_FLAGS and ACCENT_COLORS constants exactly as they are)
+
 const LEAGUE_FLAGS: Record<string, string> = {
     'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     'Championship': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
@@ -81,120 +83,122 @@ const ACCENT_COLORS: Record<string, { from: string; to: string; glow: string }> 
 
 const DEFAULT_ACCENT = { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,0.15)' }
 
+
 export default function MatchCard({ match }: { match: Match }) {
     const router = useRouter()
-
     const now = new Date()
     const kickoffTime = new Date(match.utcDate)
     const matchEndTime = new Date(kickoffTime.getTime() + 105 * 60 * 1000)
 
     const isLive = now >= kickoffTime && now <= matchEndTime
     const isFinished = now > matchEndTime
-
     const kickoff = kickoffTime.toLocaleTimeString('en-GB', {
         hour: '2-digit', minute: '2-digit',
     })
 
-    const statusLabel = isLive ? '● LIVE' : isFinished ? 'FT' : kickoff
-
+    const statusLabel = isLive ? 'LIVE' : isFinished ? 'FT' : kickoff
     const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
     const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
 
     return (
         <div
             onClick={() => router.push(`/matches/${match.id}?match=${encodeURIComponent(JSON.stringify(match))}`)}
-            className="relative rounded-2xl cursor-pointer overflow-hidden active:scale-[0.98] transition-transform duration-150"
-            style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}
+            className="group relative rounded-3xl cursor-pointer overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl"
+            style={{
+                background: 'linear-gradient(180deg, rgba(17,17,24,0.8) 0%, rgba(10,10,15,1) 100%)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                boxShadow: `0 10px 30px -15px ${accent.glow}`
+            }}
         >
-            {/* Top accent gradient line */}
-            <div className="absolute top-0 left-0 right-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, ${accent.from}, ${accent.to}, transparent)` }} />
+            {/* 1. Animated Top Border Beam */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] w-full overflow-hidden">
+                <div
+                    className="h-full w-full animate-shimmer"
+                    style={{ background: `linear-gradient(90deg, transparent, ${accent.from}, ${accent.to}, transparent)` }}
+                />
+            </div>
 
-            {/* Subtle glow blob */}
-            <div className="absolute top-0 right-0 w-32 h-20 rounded-full blur-2xl pointer-events-none"
-                style={{ background: accent.glow }} />
+            {/* 2. Interactive Hover Glow */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full blur-[50px] pointer-events-none opacity-20 group-hover:opacity-40 transition-opacity duration-500"
+                style={{ background: accent.from }} />
 
-            <div className="p-4">
-                {/* League row */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-1.5">
-                        <span className="text-sm">{flag}</span>
-                        <span className="text-[10px] text-slate-500 uppercase tracking-[0.12em] font-bold">
+            <div className="p-5">
+                {/* League header */}
+                <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-2 px-2 py-1 rounded-full bg-white/5 border border-white/5">
+                        <span className="text-xs">{flag}</span>
+                        <span className="text-[9px] text-slate-400 uppercase tracking-[0.2em] font-black">
                             {match.competition.name}
                         </span>
                     </div>
-                    <div className={`text-[9px] px-2.5 py-1 rounded-lg font-bold tracking-wider ${isLive
-                        ? 'text-red-400 border border-red-500/30 bg-red-500/10'
-                        : isFinished
-                            ? 'text-green-500 border border-green-500/30 bg-green-500/10'
-                            : 'text-slate-500 border border-slate-700/50 bg-slate-800/40'
+
+                    <div className={`flex items-center gap-1.5 text-[10px] px-3 py-1 rounded-full font-black tracking-tighter ${isLive ? 'text-red-400 bg-red-500/10 border border-red-500/20' :
+                            isFinished ? 'text-green-400 bg-green-500/10 border border-green-500/20' :
+                                'text-slate-400 bg-slate-800/40 border border-slate-700/50'
                         }`}>
+                        {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
                         {statusLabel}
                     </div>
                 </div>
 
-                {/* Teams row */}
-                <div className="flex items-center justify-between mb-4">
-                    {/* Home */}
-                    <div className="flex items-center gap-2.5 flex-1">
-                        {match.homeTeam.crest ? (
-                            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center p-1.5 shrink-0">
-                                <img
-                                    src={match.homeTeam.crest}
-                                    className="w-full h-full object-contain"
-                                    alt=""
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none'
-                                        e.currentTarget.parentElement!.innerHTML = '<span style="font-size:18px">⚽</span>'
-                                    }}
-                                />
+                {/* Main Match Content */}
+                <div className="grid grid-cols-3 items-center gap-2 mb-6">
+                    {/* Home Team */}
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative group-hover:scale-110 transition-transform duration-300">
+                            <div className="absolute inset-0 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: accent.from }} />
+                            <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
+                                <img src={match.homeTeam.crest} className="w-full h-full object-contain" alt=""
+                                    onError={(e) => { e.currentTarget.src = 'https://crests.football-data.org/soccer.png' }} />
                             </div>
-                        ) : (
-                            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg shrink-0">⚽</div>
-                        )}
-                        <span className="text-white text-sm font-bold leading-tight">{match.homeTeam.shortName}</span>
+                        </div>
+                        <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
+                            {match.homeTeam.shortName}
+                        </span>
                     </div>
 
-                    {/* VS badge */}
-                    <div className="flex flex-col items-center px-3">
-                        <span className="text-[10px] text-slate-600 font-black tracking-widest bg-slate-800/60 px-2.5 py-1 rounded-lg">VS</span>
+                    {/* VS Centerpiece */}
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-2" />
+                        <span className="text-[10px] text-slate-500 font-black italic tracking-widest">VS</span>
+                        <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent mt-2" />
                     </div>
 
-                    {/* Away */}
-                    <div className="flex items-center gap-2.5 flex-1 justify-end">
-                        <span className="text-white text-sm font-bold leading-tight text-right">{match.awayTeam.shortName}</span>
-                        {match.awayTeam.crest ? (
-                            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center p-1.5 shrink-0">
-                                <img
-                                    src={match.awayTeam.crest}
-                                    className="w-full h-full object-contain"
-                                    alt=""
-                                    onError={(e) => {
-                                        e.currentTarget.style.display = 'none'
-                                        e.currentTarget.parentElement!.innerHTML = '<span style="font-size:18px">⚽</span>'
-                                    }}
-                                />
+                    {/* Away Team */}
+                    <div className="flex flex-col items-center gap-3">
+                        <div className="relative group-hover:scale-110 transition-transform duration-300">
+                            <div className="absolute inset-0 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: accent.to }} />
+                            <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
+                                <img src={match.awayTeam.crest} className="w-full h-full object-contain" alt=""
+                                    onError={(e) => { e.currentTarget.src = 'https://crests.football-data.org/soccer.png' }} />
                             </div>
-                        ) : (
-                            <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-lg shrink-0">⚽</div>
-                        )}
+                        </div>
+                        <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
+                            {match.awayTeam.shortName}
+                        </span>
                     </div>
                 </div>
 
-                {/* AI teaser */}
-                <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                    <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-md flex items-center justify-center"
-                            style={{ background: `linear-gradient(135deg, ${accent.from}22, ${accent.to}33)`, border: `1px solid ${accent.from}33` }}>
-                            <span className="text-[10px]">🤖</span>
+                {/* Footer Action */}
+                <div className="relative mt-2 p-3 rounded-2xl overflow-hidden group/btn"
+                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-3">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-black/40 border border-white/10 text-xs">🤖</div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-300 group-hover/btn:text-white transition-colors">
+                                AI Analysis Ready
+                            </span>
                         </div>
-                        <span className="text-[11px] font-bold" style={{ color: accent.from }}>
-                            View AI Prediction
-                        </span>
+                        <div className="flex items-center gap-1 group-hover/btn:translate-x-1 transition-transform">
+                            <span className="text-[9px] font-bold" style={{ color: accent.from }}>PREDICT</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={accent.from} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 18 15 12 9 6" />
+                            </svg>
+                        </div>
                     </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent.from} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60">
-                        <polyline points="9 18 15 12 9 6" />
-                    </svg>
+                    {/* Hover Button Background Liquid Effect */}
+                    <div className="absolute inset-0 translate-y-10 group-hover/btn:translate-y-0 transition-transform duration-300 opacity-10"
+                        style={{ background: `linear-gradient(to top, ${accent.from}, transparent)` }} />
                 </div>
             </div>
         </div>
