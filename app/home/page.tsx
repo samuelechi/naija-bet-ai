@@ -7,6 +7,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
+// ... (Keep your FILTERS, LEAGUE_MAP, and getMatchStatus exactly as they are)
 const FILTERS = [
     'All', 'EPL', 'Championship', 'La Liga', 'Serie A', 'Bundesliga', 'Ligue 1',
     'UCL', 'UEL', 'UECL', 'AFCON', 'CAF', 'NPFL',
@@ -67,25 +68,25 @@ const STATUS_FILTERS: { label: string; value: StatusFilter; color: string; activ
         label: 'All',
         value: 'All',
         color: '#4b5563',
-        activeStyle: { background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', boxShadow: '0 0 16px rgba(34,197,94,0.3)' }
+        activeStyle: { background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', boxShadow: '0 4px 15px rgba(34,197,94,0.3)', border: '1px solid rgba(255,255,255,0.2)' }
     },
     {
         label: '● Live',
         value: 'Live',
         color: '#f87171',
-        activeStyle: { background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff', boxShadow: '0 0 16px rgba(239,68,68,0.35)' }
+        activeStyle: { background: 'linear-gradient(135deg, #dc2626, #ef4444)', color: '#fff', boxShadow: '0 4px 15px rgba(239,68,68,0.4)', border: '1px solid rgba(255,255,255,0.2)' }
     },
     {
         label: 'Scheduled',
         value: 'Scheduled',
         color: '#4b5563',
-        activeStyle: { background: 'linear-gradient(135deg, #1d4ed8, #3b82f6)', color: '#fff', boxShadow: '0 0 16px rgba(59,130,246,0.3)' }
+        activeStyle: { background: 'linear-gradient(135deg, #2563eb, #3b82f6)', color: '#fff', boxShadow: '0 4px 15px rgba(59,130,246,0.3)', border: '1px solid rgba(255,255,255,0.2)' }
     },
     {
         label: 'FT',
         value: 'FT',
         color: '#4b5563',
-        activeStyle: { background: 'linear-gradient(135deg, #374151, #6b7280)', color: '#fff', boxShadow: '0 0 16px rgba(107,114,128,0.3)' }
+        activeStyle: { background: 'linear-gradient(135deg, #374151, #4b5563)', color: '#fff', boxShadow: '0 4px 15px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }
     },
 ]
 
@@ -167,57 +168,64 @@ export default function Home() {
     const ftCount = matches.filter(m => getMatchStatus(m) === 'FT').length
 
     return (
-        <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh' }}>
-            <main className="flex flex-col min-h-screen" style={{ background: '#0A0A0F' }}>
+        <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh', background: '#0A0A0F' }}>
+            <main className="flex flex-col min-h-screen relative overflow-hidden">
 
-                {/* Header */}
-                <div className="relative pt-14 pb-5 px-5 overflow-hidden">
-                    <div className="absolute inset-0 pointer-events-none">
-                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-36 rounded-full blur-3xl"
-                            style={{ background: 'radial-gradient(ellipse, rgba(22,163,74,0.18) 0%, transparent 70%)' }} />
-                    </div>
+                {/* Immersive Background Glow */}
+                <div className="absolute top-0 left-0 right-0 h-96 pointer-events-none opacity-40"
+                    style={{ background: 'radial-gradient(100% 100% at 50% 0%, rgba(34,197,94,0.15) 0%, rgba(10,10,15,0) 100%)' }} />
 
-                    <div className="flex items-center justify-between mb-5 relative">
-                        <div className="flex items-center gap-2.5">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
-                                style={{ background: 'linear-gradient(135deg, #166534, #15803d)', border: '1px solid rgba(74,222,128,0.2)' }}>
+                {/* Header Section */}
+                <div className="relative pt-14 pb-5 px-5 z-10">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-[14px] flex items-center justify-center text-xl shadow-[0_0_20px_rgba(34,197,94,0.2)]"
+                                style={{ background: 'linear-gradient(135deg, #166534, #15803d)', border: '1px solid rgba(74,222,128,0.3)' }}>
                                 ⚽
                             </div>
                             <div>
-                                <span className="text-white font-black text-base tracking-tight font-display">NaijaBetAI</span>
-                                <div className="flex items-center gap-1">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-                                    <span className="text-[9px] text-green-400/70 uppercase tracking-wider font-bold">Live Predictions</span>
+                                <h1 className="text-white font-black text-lg tracking-tight leading-none mb-1">NaijaBetAI</h1>
+                                <div className="flex items-center gap-1.5">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.8)]" />
+                                    <span className="text-[10px] text-green-400/80 uppercase tracking-widest font-bold">System Online</span>
                                 </div>
                             </div>
                         </div>
                         <button
                             onClick={() => router.push('/profile')}
-                            className="w-9 h-9 rounded-xl flex items-center justify-center text-base"
-                            style={{ background: 'linear-gradient(135deg, #1f2937, #111827)', border: '1px solid rgba(255,255,255,0.08)' }}
+                            className="w-10 h-10 rounded-[14px] flex items-center justify-center text-lg active:scale-95 transition-transform"
+                            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}
                         >
                             😎
                         </button>
                     </div>
 
-                    <div className="flex gap-2.5 relative">
+                    {/* Stats Row (Glassmorphism) */}
+                    <div className="flex gap-3">
                         {[
-                            { label: 'Win Rate', value: `${winRate}%` },
-                            { label: "Today's Matches", value: `${matches.length}` },
-                            { label: 'Your Plan', value: userPlan === 'pro' ? 'PRO' : 'FREE' },
+                            { label: 'Win Rate', value: `${winRate}%`, highlight: true },
+                            { label: "Matches", value: `${matches.length}`, highlight: false },
+                            { label: 'Plan', value: userPlan === 'pro' ? 'PRO' : 'FREE', highlight: userPlan === 'pro' },
                         ].map(s => (
-                            <div key={s.label} className="flex-1 rounded-2xl px-3 py-3"
-                                style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                <p className="text-[9px] text-slate-500 uppercase tracking-wider font-bold mb-1">{s.label}</p>
-                                <p className="font-black text-lg text-white leading-none font-display">{s.value}</p>
+                            <div key={s.label} className="flex-1 relative overflow-hidden rounded-2xl px-3 py-3.5 group"
+                                style={{
+                                    background: 'rgba(255,255,255,0.02)',
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)'
+                                }}>
+                                {s.highlight && (
+                                    <div className="absolute -top-6 -right-6 w-12 h-12 bg-green-500/20 rounded-full blur-xl" />
+                                )}
+                                <p className="text-[9px] text-slate-500 uppercase tracking-widest font-black mb-1 relative z-10">{s.label}</p>
+                                <p className="font-black text-xl text-white leading-none relative z-10">{s.value}</p>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Status filter pills */}
-                <div className="px-5 pb-2">
-                    <div className="flex gap-2">
+                {/* Status Filters */}
+                <div className="px-5 pb-3 z-10">
+                    <div className="flex gap-2 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
                         {STATUS_FILTERS.map(({ label, value, activeStyle }) => {
                             const isActive = statusFilter === value
                             const count = value === 'Live' ? liveCounts : value === 'Scheduled' ? scheduledCount : value === 'FT' ? ftCount : null
@@ -225,19 +233,19 @@ export default function Home() {
                                 <button
                                     key={value}
                                     onClick={() => setStatusFilter(value)}
-                                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
+                                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 shrink-0"
                                     style={isActive ? activeStyle : {
-                                        background: '#111118',
-                                        color: '#4b5563',
-                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        color: '#64748b',
+                                        border: '1px solid rgba(255,255,255,0.05)',
                                     }}
                                 >
                                     {label}
                                     {count !== null && count > 0 && (
-                                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md"
+                                        <span className="flex items-center justify-center min-w-[16px] h-4 px-1 rounded-md text-[8px] font-black"
                                             style={{
-                                                background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.06)',
-                                                color: isActive ? '#fff' : '#6b7280'
+                                                background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.08)',
+                                                color: isActive ? '#fff' : '#94a3b8'
                                             }}>
                                             {count}
                                         </span>
@@ -248,62 +256,68 @@ export default function Home() {
                     </div>
                 </div>
 
-                {/* League filter pills */}
-                <div className="px-5 pb-3">
-                    <div className="flex gap-2 overflow-x-auto" style={{ scrollbarWidth: 'none' }}>
-                        {FILTERS.map(f => (
-                            <button
-                                key={f}
-                                onClick={() => setActiveFilter(f)}
-                                className="px-3.5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-200 shrink-0"
-                                style={activeFilter === f ? {
-                                    background: 'linear-gradient(135deg, #16a34a, #22c55e)',
-                                    color: '#fff',
-                                    boxShadow: '0 0 16px rgba(34,197,94,0.3)',
-                                } : {
-                                    background: '#111118',
-                                    color: '#4b5563',
-                                    border: '1px solid rgba(255,255,255,0.06)',
-                                }}
-                            >
-                                {f}
-                            </button>
-                        ))}
+                {/* League Filters */}
+                <div className="px-5 pb-4 z-10">
+                    <div className="flex gap-2.5 overflow-x-auto no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+                        {FILTERS.map(f => {
+                            const isActive = activeFilter === f;
+                            return (
+                                <button
+                                    key={f}
+                                    onClick={() => setActiveFilter(f)}
+                                    className="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest whitespace-nowrap transition-all duration-300 shrink-0 relative overflow-hidden"
+                                    style={isActive ? {
+                                        background: 'rgba(34,197,94,0.1)',
+                                        color: '#4ade80',
+                                        border: '1px solid rgba(34,197,94,0.3)',
+                                        boxShadow: '0 0 15px rgba(34,197,94,0.1)'
+                                    } : {
+                                        background: 'transparent',
+                                        color: '#4b5563',
+                                        border: '1px solid transparent',
+                                    }}
+                                >
+                                    {f}
+                                </button>
+                            )
+                        })}
                     </div>
                 </div>
 
-                {/* Divider */}
-                <div className="mx-5 mb-3 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
+                {/* Divider Line */}
+                <div className="mx-5 mb-4 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)' }} />
 
-                {/* Match list */}
-                <div className="flex-1 px-5 pb-28 space-y-3 overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                {/* Match List Area */}
+                <div className="flex-1 px-5 pb-28 space-y-4 overflow-y-auto z-10 no-scrollbar" style={{ scrollbarWidth: 'none' }}>
+
                     {loading && (
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {[1, 2, 3].map(i => (
-                                <div key={i} className="h-28 rounded-2xl animate-pulse"
-                                    style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.04)' }} />
+                                <div key={i} className="h-32 rounded-3xl animate-pulse"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)' }} />
                             ))}
                         </div>
                     )}
 
                     {!loading && filtered.length === 0 && (
-                        <div className="flex flex-col items-center justify-center py-20 gap-4">
-                            <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                                style={{ background: '#111118', border: '1px solid rgba(255,255,255,0.06)' }}>
-                                ⚽
+                        <div className="flex flex-col items-center justify-center py-16 gap-5 opacity-60">
+                            <div className="relative">
+                                <div className="absolute inset-0 bg-white/5 rounded-full blur-xl animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                                    style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                    📡
+                                </div>
                             </div>
                             <div className="text-center">
-                                <p className="text-white font-bold mb-1">
+                                <p className="text-white font-black tracking-wide mb-1.5 text-sm">
                                     {statusFilter !== 'All'
-                                        ? `No ${statusFilter} matches${activeFilter !== 'All' ? ` in ${activeFilter}` : ''}`
-                                        : activeFilter === 'All' ? 'No matches today' : `No ${activeFilter} matches today`}
+                                        ? `No ${statusFilter} Matches`
+                                        : activeFilter === 'All' ? 'No Matches Found' : `No ${activeFilter} Matches`}
                                 </p>
-                                <p className="text-slate-500 text-xs">
-                                    {statusFilter !== 'All'
-                                        ? 'Try a different status or league filter'
-                                        : activeFilter === 'All'
-                                            ? "Check back later for today's predictions"
-                                            : 'Try a different league or check back later'}
+                                <p className="text-slate-500 text-xs font-medium max-w-[200px] mx-auto leading-relaxed">
+                                    {statusFilter !== 'All' || activeFilter !== 'All'
+                                        ? 'Try adjusting your filters to see more games.'
+                                        : 'The AI is currently analyzing upcoming fixtures. Check back soon.'}
                                 </p>
                             </div>
                         </div>
@@ -311,12 +325,14 @@ export default function Home() {
 
                     {!loading && filtered.length > 0 && (
                         <>
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-bold">
-                                    {statusFilter === 'All' ? "Today's Predictions" : `${statusFilter} Matches`}
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">
+                                    {statusFilter === 'All' ? "Predictions Feed" : `${statusFilter} Feed`}
                                 </span>
-                                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
-                                <span className="text-[10px] text-green-500 font-bold">{filtered.length} matches</span>
+                                <div className="flex-1 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                                <span className="text-[9px] text-green-500 font-black tracking-widest px-2 py-1 rounded-md bg-green-500/10">
+                                    {filtered.length} MATCHES
+                                </span>
                             </div>
                             {filtered.map(match => (
                                 <MatchCard key={match.id} match={match} />
