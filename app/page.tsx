@@ -105,7 +105,7 @@ function Typewriter({ words }: { words: string[] }) {
 // --- FLOATING MATCH CARD ---
 function FloatingCard({ delayClass, className }: { delayClass?: string; className?: string }) {
   return (
-    <div className={`bg-[#111118]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl shadow-green-500/10 animate-float ${delayClass} ${className}`}>
+    <div className={`bg-[#111118]/80 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-[0_8px_32px_-12px_rgba(34,197,94,0.25)] animate-float ${delayClass} ${className}`}>
       <div className="text-[9px] text-slate-400 font-black tracking-widest uppercase mb-2">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
       <div className="flex items-center gap-3 mb-2">
         <span className="text-sm font-black text-white">Arsenal</span>
@@ -186,14 +186,27 @@ export default function LandingPage() {
 
   return (
     <div className="bg-[#0A0A0F] min-h-screen text-white font-sans overflow-x-hidden selection:bg-green-500/30">
+      <style>{`
+        @keyframes floatUp { 0%{transform:translateY(0px)} 100%{transform:translateY(-15px)} }
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        .animate-float { animation: floatUp 5s ease-in-out infinite alternate; }
+        .animate-fade-up { animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-1500 { animation-delay: 1.5s !important; }
+      `}</style>
 
       {/* PWA FLOATING ACTION BUTTON (Right Bottom) */}
-      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 hidden sm:block opacity-0">
+      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 hidden sm:block">
         <button
           onClick={() => {/* Trigger PWA install modal or logic here */ }}
-          className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-lg shadow-green-500/20 hover:shadow-xl hover:shadow-green-500/30 hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
+          className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.15)] hover:shadow-[0_4px_30px_rgba(34,197,94,0.3)] hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
         >
           <div className="w-10 h-10 rounded-full bg-linear-to-r from-green-600 to-green-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
+            {/* Play Icon */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" className="ml-0.5">
               <path d="M8 5V19L19 12L8 5Z" fill="white" />
             </svg>
@@ -213,11 +226,11 @@ export default function LandingPage() {
         </div>
         <div className="flex gap-2.5">
           <button onClick={() => router.push('/login')} className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold transition-all">Login</button>
-          <button onClick={() => router.push('/signup')} className="px-4 py-2 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-xs font-bold shadow-lg shadow-green-500/20 hover:-translate-y-0.5 transition-all">Get Free Tips</button>
+          <button onClick={() => router.push('/signup')} className="px-4 py-2 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-xs font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all">Get Free Tips</button>
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* HERO (Responsive Grid & Clamped Typography) */}
       <section className="relative min-h-svh flex items-center pt-24 pb-12 overflow-hidden">
         <ParticleCanvas />
 
@@ -226,24 +239,24 @@ export default function LandingPage() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-5 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-8 items-center">
 
-          {/* Left Copy (Static) */}
+          {/* Left Copy */}
           <div className="pt-8 md:pt-0">
-            <div className="animate-fade-up delay-100 opacity-0 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-3.5 py-1.5 mb-5 backdrop-blur-md">
+            <div className="animate-fade-up delay-100 inline-flex items-center gap-2 bg-green-500/10 border border-green-500/20 rounded-full px-3.5 py-1.5 mb-5 backdrop-blur-md">
               <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
               <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">AI-Powered • Live Now</span>
             </div>
 
-            <h1 className="animate-fade-up delay-200 opacity-0 text-[clamp(2.75rem,8vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-4 md:mb-6">
+            <h1 className="animate-fade-up delay-200 text-[clamp(2.75rem,8vw,4.5rem)] font-black leading-[1.05] tracking-tight mb-4 md:mb-6">
               Stop Guessing.<br />
               <Typewriter words={['Start Winning.', 'Bet Smarter.', 'Trust the AI.']} />
             </h1>
 
-            <p className="animate-fade-up delay-300 opacity-0 text-sm md:text-lg text-slate-400 leading-relaxed mb-8 max-w-md">
+            <p className="animate-fade-up delay-300 text-sm md:text-lg text-slate-400 leading-relaxed mb-8 max-w-md">
               Nigeria's first AI-powered football analysis app. Get data-driven predictions across <strong className="text-white">15 betting markets</strong> for EPL, UCL, La Liga & more.
             </p>
 
-            <div className="animate-fade-up delay-400 opacity-0 flex flex-col sm:flex-row gap-3 mb-8 md:mb-10">
-              <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-lg shadow-green-500/20 hover:-translate-y-1 transition-all text-center">
+            <div className="animate-fade-up delay-400 flex flex-col sm:flex-row gap-3 mb-8 md:mb-10">
+              <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
                 🚀 Sign Up Free
               </button>
               <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
@@ -251,7 +264,7 @@ export default function LandingPage() {
               </a>
             </div>
 
-            <div className="animate-fade-up delay-500 opacity-0 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
+            <div className="animate-fade-up delay-500 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
               {[
                 { val: 76, suffix: '+', label: 'Matches Today' },
                 { val: 15, suffix: '', label: 'AI Markets' },
@@ -266,7 +279,7 @@ export default function LandingPage() {
           </div>
 
           {/* Right Visuals (Dynamic Slider) */}
-          <div className="relative flex justify-center items-center min-h-112.5 md:min-h-125 lg:min-h-150 animate-fade-up delay-400 opacity-0 w-full">
+          <div className="relative flex justify-center items-center min-h-100 md:min-h-125 animate-fade-up delay-400 overflow-visible w-full">
 
             {/* Slide Indicators */}
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-30 bg-[#111118]/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
@@ -284,26 +297,24 @@ export default function LandingPage() {
 
             {/* SLIDE 0: Footballer + Circles + Cards */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 0 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
-              {/* Core glow */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-62.5 h-62.5 bg-green-500/10 rounded-full blur-[60px] pointer-events-none z-0" />
+              <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-62.5 h-62.5 bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
 
               {/* CONCENTRIC RADAR CIRCLES */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-70 h-70 md:w-95 md:h-95 rounded-full border border-green-500/30 pointer-events-none z-0" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-105 h-105 md:w-145 md:h-145 rounded-full border border-green-500/20 pointer-events-none z-0" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-140 h-140 md:w-195 md:h-195 rounded-full border border-green-500/10 pointer-events-none z-0" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-175 h-175 md:w-245 md:h-245 rounded-full border border-green-500/5 pointer-events-none z-0 hidden sm:block" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] md:w-[380px] md:h-[380px] rounded-full border border-green-500/30 pointer-events-none z-0" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] md:w-[580px] md:h-[580px] rounded-full border border-green-500/20 pointer-events-none z-0" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] md:w-[780px] md:h-[780px] rounded-full border border-green-500/10 pointer-events-none z-0" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] md:w-[980px] md:h-[980px] rounded-full border border-green-500/5 pointer-events-none z-0 hidden sm:block" />
 
-              {/* Player Image */}
-              <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)] pt-8 md:pt-20" />
+              <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
 
               {/* 1. Top Right Card (Pointing) */}
-              <FloatingCard className="hidden sm:block absolute top-2 -right-1 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.70] md:scale-100 origin-right" />
+              <FloatingCard className="absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
 
-              {/* 2. Bottom Left Card (Left Leg) */}
-              <FloatingCard delayClass="delay-[1500ms]" className="hidden sm:block absolute bottom-8 -left-6 md:bottom-28 md:-left-8 lg:-left-12 z-20 border-indigo-500/20 shadow-2xl shadow-indigo-500/10 scale-[0.70] md:scale-100 origin-left" />
+              {/* 2. Bottom Left Card (Corrected Positioning at Left Foot) */}
+              <FloatingCard delayClass="[animation-delay:1s]" className="absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
 
               {/* 3. Bottom Right Big Stat Card (Confidence) */}
-              <div className="absolute -bottom-4 -right-2 md:bottom-16 md:-right-8 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-2xl shadow-green-500/10 scale-[0.80] md:scale-100 origin-bottom-right">
+              <div className="absolute bottom-2 -right-4 md:bottom-16 md:-right-12 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.75] md:scale-100 origin-bottom-right">
                 <div className="text-[8px] md:text-[9px] text-slate-400 font-black tracking-widest uppercase mb-1">AI Confidence</div>
                 <div className="text-3xl md:text-4xl font-black text-green-500 leading-none mb-1">87%</div>
                 <div className="text-[10px] md:text-xs font-bold text-white">Home Win</div>
@@ -312,18 +323,14 @@ export default function LandingPage() {
 
             {/* SLIDE 1: PWA Video Mockup */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 1 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
-              {/* Core glow for video */}
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-62.5 h-100 bg-green-500/20 rounded-[3rem] blur-[60px] pointer-events-none z-0" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[400px] bg-green-500/20 rounded-[3rem] blur-[60px] pointer-events-none z-0" />
 
-              {/* Mobile Phone Mockup Container */}
-              <div className="relative w-full max-w-65 md:max-w-75 aspect-9/19 bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-green-500/20">
-                {/* The Notch */}
+              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[9/19] bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-[0_0_40px_rgba(34,197,94,0.2)]">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-10 flex justify-center items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                   <div className="w-12 h-1.5 rounded-full bg-slate-900" />
                 </div>
 
-                {/* Assuming your video is named pwa-video.mp4 and in the public folder */}
                 <video
                   src="/pwa-video.mp4"
                   autoPlay
@@ -333,7 +340,6 @@ export default function LandingPage() {
                   className="absolute inset-0 w-full h-full object-cover"
                 />
 
-                {/* Overlay gradient to make it look like a screen */}
                 <div className="absolute inset-0 bg-linear-to-tr from-white/5 to-transparent pointer-events-none mix-blend-overlay" />
               </div>
             </div>
@@ -357,7 +363,7 @@ export default function LandingPage() {
             { icon: '🔔', title: 'Push Notifications', desc: 'Morning tip alerts, live match updates, and expiry reminders delivered straight to your device.' },
             { icon: '📱', title: 'Android + iPhone', desc: 'Download the APK for Android. Full PWA support for iPhone — use it exactly like a native app.' },
           ].map((f, i) => (
-            <div key={f.title} className="group bg-[#111118]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 hover:-translate-y-1.5 hover:border-green-500/30 hover:bg-[#111118] hover:shadow-2xl hover:shadow-green-500/10 transition-all duration-300">
+            <div key={f.title} className="group bg-[#111118]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 hover:-translate-y-1.5 hover:border-green-500/30 hover:bg-[#111118] hover:shadow-[0_10px_30px_-10px_rgba(34,197,94,0.15)] transition-all duration-300">
               <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
               <h3 className="text-base md:text-lg font-black text-white mb-2">{f.title}</h3>
               <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
@@ -409,7 +415,7 @@ export default function LandingPage() {
             </div>
 
             {/* Pro Tier */}
-            <div className="relative bg-linear-to-br from-[#0c1f12] to-[#111118] border border-green-500/40 rounded-4xl p-8 md:p-10 shadow-2xl shadow-green-500/10 md:scale-105">
+            <div className="relative bg-linear-to-br from-[#0c1f12] to-[#111118] border border-green-500/40 rounded-4xl p-8 md:p-10 shadow-[0_0_40px_rgba(34,197,94,0.1)] md:scale-105">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-linear-to-r from-green-600 to-green-400 rounded-full px-4 py-1.5 text-[10px] font-black text-white uppercase tracking-widest shadow-lg whitespace-nowrap">
                 ⭐ Most Popular
               </div>
@@ -419,12 +425,12 @@ export default function LandingPage() {
               <div className="space-y-4 mb-8">
                 {['Unlimited AI predictions', 'All 15 advanced markets', '30+ leagues covered globally', 'Instant Push notifications', 'Priority support', 'History & win rate stats'].map(f => (
                   <div key={f} className="flex items-center gap-3">
-                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-green-500/50 shrink-0">✓</div>
+                    <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold shadow-[0_0_10px_rgba(34,197,94,0.5)] shrink-0">✓</div>
                     <span className="text-sm font-medium text-white">{f}</span>
                   </div>
                 ))}
               </div>
-              <button onClick={() => router.push('/signup')} className="w-full py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm font-black text-white shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/40 hover:-translate-y-1 transition-all">
+              <button onClick={() => router.push('/signup')} className="w-full py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm font-black text-white shadow-[0_8px_20px_rgba(34,197,94,0.3)] hover:shadow-[0_8px_30px_rgba(34,197,94,0.5)] hover:-translate-y-1 transition-all">
                 Start Pro Plan
               </button>
             </div>
@@ -445,7 +451,7 @@ export default function LandingPage() {
             Join thousands of Nigerian bettors already using the NaijaBetAI Oracle to make data-driven decisions every matchday.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-            <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-lg shadow-green-500/20 hover:-translate-y-1 transition-all">
+            <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
               🚀 Create Free Account
             </button>
             <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
