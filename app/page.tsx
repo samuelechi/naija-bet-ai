@@ -230,7 +230,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* HERO (Responsive Grid & Clamped Typography) */}
       <section className="relative min-h-svh flex items-center pt-24 pb-12 overflow-hidden">
         <ParticleCanvas />
 
@@ -264,7 +264,6 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Stats scaled down slightly on mobile */}
             <div className="animate-fade-up delay-500 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
               {[
                 { val: 76, suffix: '+', label: 'Matches Today' },
@@ -280,7 +279,7 @@ export default function LandingPage() {
           </div>
 
           {/* Right Visuals (Dynamic Slider) */}
-          <div className="relative flex justify-center items-end min-h-100 md:min-h-125 animate-fade-up delay-400 overflow-visible w-full">
+          <div className="relative flex justify-center items-center min-h-100 md:min-h-125 animate-fade-up delay-400 overflow-visible w-full">
 
             {/* Slide Indicators */}
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-30 bg-[#111118]/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
@@ -306,13 +305,13 @@ export default function LandingPage() {
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] md:w-[780px] md:h-[780px] rounded-full border border-green-500/10 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] md:w-[980px] md:h-[980px] rounded-full border border-green-500/5 pointer-events-none z-0 hidden sm:block" />
 
-              <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)] pt-8 md:pt-20" />
+              <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
 
               {/* 1. Top Right Card (Pointing) */}
-              <FloatingCard className="hidden sm:block absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
+              <FloatingCard className="absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
 
               {/* 2. Bottom Left Card (Corrected Positioning at Left Foot) */}
-              <FloatingCard delayClass="[animation-delay:1s]" className="hidden sm:block absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
+              <FloatingCard delayClass="[animation-delay:1s]" className="absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
 
               {/* 3. Bottom Right Big Stat Card (Confidence) */}
               <div className="absolute bottom-2 -right-4 md:bottom-16 md:-right-12 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.75] md:scale-100 origin-bottom-right">
