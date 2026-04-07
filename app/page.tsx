@@ -200,7 +200,7 @@ export default function LandingPage() {
       `}</style>
 
       {/* PWA FLOATING ACTION BUTTON (Right Bottom) */}
-      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 hidden sm:block">
+      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 opacity-0">
         <button
           onClick={() => {/* Trigger PWA install modal or logic here */ }}
           className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.15)] hover:shadow-[0_4px_30px_rgba(34,197,94,0.3)] hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
