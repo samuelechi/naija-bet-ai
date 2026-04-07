@@ -321,14 +321,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* SLIDE 1: PWA Video Mockup (Strict Height Control Added Here) */}
+            {/* SLIDE 1: PWA Video Mockup */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 1 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
-              {/* Core glow for video */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[400px] bg-green-500/20 rounded-[3rem] blur-[60px] pointer-events-none z-0" />
 
-              {/* Mobile Phone Mockup Container - Changed w-full to strict h-[] and aspect ratio to fix overlap */}
-              <div className="relative mt-12 md:mt-0 h-[380px] md:h-[480px] aspect-[9/19] bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-                {/* The Notch */}
+              <div className="relative w-full max-w-[260px] md:max-w-[300px] aspect-[9/19] bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-[0_0_40px_rgba(34,197,94,0.2)]">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-10 flex justify-center items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                   <div className="w-12 h-1.5 rounded-full bg-slate-900" />
