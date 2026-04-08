@@ -146,6 +146,108 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>
 }
 
+// --- PWA INSTALL BUTTON ---
+function PWAInstallButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
+  const [isIOS, setIsIOS] = useState(false)
+  const [showIOSModal, setShowIOSModal] = useState(false)
+  const [isInstalled, setIsInstalled] = useState(false)
+
+  useEffect(() => {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true)
+      return
+    }
+    const ios = /iphone|ipad|ipod/.test(navigator.userAgent.toLowerCase())
+    setIsIOS(ios)
+
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredPrompt(e)
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  const handleClick = async () => {
+    if (isIOS) {
+      setShowIOSModal(true)
+      return
+    }
+    if (deferredPrompt) {
+      deferredPrompt.prompt()
+      const { outcome } = await deferredPrompt.userChoice
+      if (outcome === 'accepted') setIsInstalled(true)
+      setDeferredPrompt(null)
+    }
+  }
+
+  if (isInstalled) return null
+
+  return (
+    <>
+      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 opacity-0">
+        <button
+          onClick={handleClick}
+          className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.15)] hover:shadow-[0_4px_30px_rgba(34,197,94,0.3)] hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
+        >
+          <div className="w-10 h-10 rounded-full bg-linear-to-r from-green-600 to-green-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" className="ml-0.5">
+              <path d="M8 5V19L19 12L8 5Z" fill="white" />
+            </svg>
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest leading-none mb-1">Install App</span>
+            <span className="text-xs font-bold text-white leading-none">iOS & Android PWA</span>
+          </div>
+        </button>
+      </div>
+
+      {/* iOS Instructions Modal */}
+      {showIOSModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm pb-8 px-4"
+          onClick={() => setShowIOSModal(false)}
+        >
+          <div
+            className="w-full max-w-sm bg-[#111118] border border-green-500/20 rounded-3xl p-6 shadow-2xl"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-xl">📲</div>
+              <div>
+                <p className="text-white font-black text-sm">Add to Home Screen</p>
+                <p className="text-slate-400 text-[11px]">Install NaijaBetAI on your iPhone</p>
+              </div>
+            </div>
+            <div className="space-y-3 mb-5">
+              {[
+                { text: 'Tap the Share button', icon: '⬆️', sub: 'at the bottom of Safari' },
+                { text: 'Scroll and tap', icon: '➕', sub: '"Add to Home Screen"' },
+                { text: 'Tap "Add"', icon: '✅', sub: "and you're done!" },
+              ].map(({ text, icon, sub }) => (
+                <div key={text} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+                  <span className="text-xl">{icon}</span>
+                  <div>
+                    <p className="text-white text-xs font-bold">{text}</p>
+                    <p className="text-slate-400 text-[10px]">{sub}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => setShowIOSModal(false)}
+              className="w-full py-3 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-black"
+            >
+              Got it!
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 // --- MAIN PAGE ---
 export default function LandingPage() {
   const router = useRouter()
@@ -174,7 +276,7 @@ export default function LandingPage() {
     if (checking) return;
     const interval = setInterval(() => {
       setActiveSlide(prev => (prev === 0 ? 1 : 0))
-    }, 20000) // 20 seconds
+    }, 20000)
     return () => clearInterval(interval)
   }, [checking])
 
@@ -199,24 +301,8 @@ export default function LandingPage() {
         .delay-1500 { animation-delay: 1.5s !important; }
       `}</style>
 
-      {/* PWA FLOATING ACTION BUTTON (Right Bottom) */}
-      <div className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-50 animate-fade-up delay-500 opacity-0">
-        <button
-          onClick={() => {/* Trigger PWA install modal or logic here */ }}
-          className="group flex items-center gap-3 bg-[#111118]/80 backdrop-blur-xl border border-green-500/30 p-2 pr-5 rounded-full shadow-[0_4px_20px_rgba(34,197,94,0.15)] hover:shadow-[0_4px_30px_rgba(34,197,94,0.3)] hover:border-green-500/50 hover:-translate-y-1 transition-all duration-300"
-        >
-          <div className="w-10 h-10 rounded-full bg-linear-to-r from-green-600 to-green-500 flex items-center justify-center shadow-inner group-hover:scale-105 transition-transform duration-300">
-            {/* Play Icon */}
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg" className="ml-0.5">
-              <path d="M8 5V19L19 12L8 5Z" fill="white" />
-            </svg>
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-[9px] font-black text-green-500 uppercase tracking-widest leading-none mb-1">Install App</span>
-            <span className="text-xs font-bold text-white leading-none">iOS & Android PWA</span>
-          </div>
-        </button>
-      </div>
+      {/* PWA FLOATING ACTION BUTTON */}
+      <PWAInstallButton />
 
       {/* NAV */}
       <nav className="fixed top-0 left-0 right-0 z-40 px-5 md:px-8 py-4 flex items-center justify-between bg-[#0A0A0F]/70 backdrop-blur-2xl border-b border-white/5">
@@ -230,7 +316,7 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* HERO (Responsive Grid & Clamped Typography) */}
+      {/* HERO */}
       <section className="relative min-h-svh flex items-center pt-24 pb-12 overflow-hidden">
         <ParticleCanvas />
 
@@ -299,7 +385,6 @@ export default function LandingPage() {
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 0 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
               <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-62.5 h-62.5 bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
 
-              {/* CONCENTRIC RADAR CIRCLES */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] md:w-[380px] md:h-[380px] rounded-full border border-green-500/30 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] md:w-[580px] md:h-[580px] rounded-full border border-green-500/20 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] md:w-[780px] md:h-[780px] rounded-full border border-green-500/10 pointer-events-none z-0" />
@@ -307,13 +392,9 @@ export default function LandingPage() {
 
               <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
 
-              {/* 1. Top Right Card (Pointing) */}
               <FloatingCard className="absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
-
-              {/* 2. Bottom Left Card (Corrected Positioning at Left Foot) */}
               <FloatingCard delayClass="[animation-delay:1s]" className="absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
 
-              {/* 3. Bottom Right Big Stat Card (Confidence) */}
               <div className="absolute bottom-2 -right-4 md:bottom-16 md:-right-12 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.75] md:scale-100 origin-bottom-right">
                 <div className="text-[8px] md:text-[9px] text-slate-400 font-black tracking-widest uppercase mb-1">AI Confidence</div>
                 <div className="text-3xl md:text-4xl font-black text-green-500 leading-none mb-1">87%</div>
@@ -321,14 +402,11 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* SLIDE 1: PWA Video Mockup (Strict Height Control Added Here) */}
+            {/* SLIDE 1: PWA Video Mockup */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 1 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
-              {/* Core glow for video */}
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[400px] bg-green-500/20 rounded-[3rem] blur-[60px] pointer-events-none z-0" />
 
-              {/* Mobile Phone Mockup Container - Changed w-full to strict h-[] and aspect ratio to fix overlap */}
               <div className="relative mt-12 md:mt-0 h-[380px] md:h-[480px] aspect-[9/19] bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-[0_0_40px_rgba(34,197,94,0.2)]">
-                {/* The Notch */}
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-10 flex justify-center items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                   <div className="w-12 h-1.5 rounded-full bg-slate-900" />
@@ -365,7 +443,7 @@ export default function LandingPage() {
             { icon: '📊', title: '15 AI Markets', desc: '1X2, BTTS, Over/Under, Correct Score, HT/FT, Asian Handicap, Double Chance and more.' },
             { icon: '🔔', title: 'Push Notifications', desc: 'Morning tip alerts, live match updates, and expiry reminders delivered straight to your device.' },
             { icon: '📱', title: 'Android + iPhone', desc: 'Download the APK for Android. Full PWA support for iPhone — use it exactly like a native app.' },
-          ].map((f, i) => (
+          ].map((f) => (
             <div key={f.title} className="group bg-[#111118]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 hover:-translate-y-1.5 hover:border-green-500/30 hover:bg-[#111118] hover:shadow-[0_10px_30px_-10px_rgba(34,197,94,0.15)] transition-all duration-300">
               <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
               <h3 className="text-base md:text-lg font-black text-white mb-2">{f.title}</h3>
