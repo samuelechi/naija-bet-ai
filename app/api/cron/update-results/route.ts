@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendNotification } from '@/app/api/notifications/send/route'
 
-const FOOTBALL_API = 'https://api.football-data.org/v4'
-const headers = { 'X-Auth-Token': process.env.FOOTBALL_DATA_API_KEY! }
+const BZZOIRO_API = 'https://sports.bzzoiro.com/api'
+const BZZOIRO_TOKEN = process.env.API_FOOTBALL_KEY!
 
 function evaluateBet(
     verdict: string,
@@ -157,7 +157,9 @@ export async function GET(request: NextRequest) {
 
     const supabase = getSupabaseAdmin()
 
+    // Get pending predictions from the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const today = new Date().toISOString().split('T')[0]
 
     const { data: pending, error } = await supabase
         .from('predictions')
@@ -168,32 +170,68 @@ export async function GET(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
     if (!pending || pending.length === 0) return NextResponse.json({ updated: 0, message: 'No pending predictions' })
 
-    const matchIds = [...new Set(pending.map(p => p.match_id))]
+    // Fetch finished matches from bzzoiro
+    let allFinished: any[] = []
+    let page = 1
+    let hasMore = true
 
-    let updated = 0
+    while (hasMore) {
+        try {
+            const res = await fetch(
+                `${BZZOIRO_API}/events/?status=finished&date_from=${sevenDaysAgo}&date_to=${today}&page=${page}`,
+                {
+                    headers: { 'Authorization': `Token ${BZZOIRO_TOKEN}` }
+                }
+            )
+
+            if (!res.ok) break
+
+            const data = await res.json()
+            allFinished.push(...(data.results || []))
+
+            if (!data.next) {
+                hasMore = false
+            } else {
+                page++
+                await new Promise(r => setTimeout(r, 200)) // Rate limit
+            }
+        } catch {
+            break
+        }
+    }
+
+    // Build lookup map: match_id -> { homeScore, awayScore, status }
     const results: Record<number, { homeScore: number; awayScore: number; status: string }> = {}
 
-    for (const matchId of matchIds) {
-        try {
-            const res = await fetch(`${FOOTBALL_API}/matches/${matchId}`, { headers })
-            if (!res.ok) continue
-            const data = await res.json()
+    for (const match of allFinished) {
+        // Try to find match by ID or team names
+        if (match.id) {
+            results[match.id] = {
+                homeScore: match.home_score || 0,
+                awayScore: match.away_score || 0,
+                status: match.status
+            }
+        }
 
-            if (data.status === 'FINISHED' && data.score?.fullTime) {
-                results[matchId] = {
-                    homeScore: data.score.fullTime.home,
-                    awayScore: data.score.fullTime.away,
-                    status: data.status,
+        // Also store by a composite key if you use match_id differently
+        for (const prediction of pending) {
+            if (
+                prediction.home_team.toLowerCase().trim() === match.home_team.toLowerCase().trim() &&
+                prediction.away_team.toLowerCase().trim() === match.away_team.toLowerCase().trim()
+            ) {
+                results[prediction.match_id] = {
+                    homeScore: match.home_score || 0,
+                    awayScore: match.away_score || 0,
+                    status: match.status
                 }
             }
-            await new Promise(r => setTimeout(r, 300))
-        } catch {
-            continue
         }
     }
 
     // Track wins per user for notifications
     const userWins: Record<string, { count: number; match: string }> = {}
+
+    let updated = 0
 
     for (const prediction of pending) {
         const result = results[prediction.match_id]
@@ -264,6 +302,7 @@ export async function GET(request: NextRequest) {
         updated,
         total: pending.length,
         winnersNotified: winnerIds.length,
-        message: `Updated ${updated} predictions, notified ${winnerIds.length} winners`
+        finishedMatches: allFinished.length,
+        message: `Updated ${updated} predictions from ${allFinished.length} finished matches, notified ${winnerIds.length} winners`
     })
 }
