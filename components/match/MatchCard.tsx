@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation'
 import { Match } from '@/types'
 
-// ... (Keep your LEAGUE_FLAGS and ACCENT_COLORS constants exactly as they are)
-
 const LEAGUE_FLAGS: Record<string, string> = {
     'Premier League': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     'Championship': '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
@@ -96,7 +94,14 @@ export default function MatchCard({ match }: { match: Match }) {
         hour: '2-digit', minute: '2-digit',
     })
 
-    const statusLabel = isLive ? 'LIVE' : isFinished ? 'FT' : kickoff
+    // Show score if live or finished, otherwise show kickoff time
+    const statusLabel = isLive || isFinished
+        ? `${match.homeScore ?? 0} - ${match.awayScore ?? 0}`
+        : kickoff
+
+    // Badge label changes based on status
+    const badgeLabel = isLive ? 'LIVE' : isFinished ? 'FT' : kickoff
+
     const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
     const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
 
@@ -133,11 +138,11 @@ export default function MatchCard({ match }: { match: Match }) {
                     </div>
 
                     <div className={`flex items-center gap-1.5 text-[10px] px-3 py-1 rounded-full font-black tracking-tighter ${isLive ? 'text-red-400 bg-red-500/10 border border-red-500/20' :
-                            isFinished ? 'text-green-400 bg-green-500/10 border border-green-500/20' :
-                                'text-slate-400 bg-slate-800/40 border border-slate-700/50'
+                        isFinished ? 'text-green-400 bg-green-500/10 border border-green-500/20' :
+                            'text-slate-400 bg-slate-800/40 border border-slate-700/50'
                         }`}>
                         {isLive && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />}
-                        {statusLabel}
+                        {isLive || isFinished ? badgeLabel : statusLabel}
                     </div>
                 </div>
 
@@ -149,7 +154,7 @@ export default function MatchCard({ match }: { match: Match }) {
                             <div className="absolute inset-0 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: accent.from }} />
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <img src={match.homeTeam.crest} className="w-full h-full object-contain" alt=""
-                                    onError={(e) => { e.currentTarget.src = 'https://crests.football-data.org/soccer.png' }} />
+                                    onError={(e) => { e.currentTarget.src = 'https://sports.bzzoiro.com/img/league/1/' }} />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
@@ -157,10 +162,16 @@ export default function MatchCard({ match }: { match: Match }) {
                         </span>
                     </div>
 
-                    {/* VS Centerpiece */}
+                    {/* VS Centerpiece - Now Shows Score or VS */}
                     <div className="flex flex-col items-center justify-center">
                         <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent mb-2" />
-                        <span className="text-[10px] text-slate-500 font-black italic tracking-widest">VS</span>
+                        {isLive || isFinished ? (
+                            <span className="text-[12px] text-white font-black tracking-widest">
+                                {statusLabel}
+                            </span>
+                        ) : (
+                            <span className="text-[10px] text-slate-500 font-black italic tracking-widest">VS</span>
+                        )}
                         <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-700 to-transparent mt-2" />
                     </div>
 
@@ -170,7 +181,7 @@ export default function MatchCard({ match }: { match: Match }) {
                             <div className="absolute inset-0 rounded-full blur-md opacity-20 group-hover:opacity-40 transition-opacity" style={{ background: accent.to }} />
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <img src={match.awayTeam.crest} className="w-full h-full object-contain" alt=""
-                                    onError={(e) => { e.currentTarget.src = 'https://crests.football-data.org/soccer.png' }} />
+                                    onError={(e) => { e.currentTarget.src = 'https://sports.bzzoiro.com/img/league/1/' }} />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">

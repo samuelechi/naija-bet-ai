@@ -11,6 +11,9 @@ export interface Match {
     awayTeam: Team
     utcDate: string
     status: 'SCHEDULED' | 'LIVE' | 'FINISHED'
+    homeScore?: number | null
+    awayScore?: number | null
+    currentMinute?: number | null
     competition: {
         name: string
         code: string

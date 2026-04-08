@@ -21,11 +21,16 @@ async function fetchAllEvents(date: string): Promise<any[]> {
     let url = `${BASE_URL}/api/events/?date_from=${date}&date_to=${date}`
 
     while (url) {
-        const res = await fetch(url, { headers: apiHeaders })
-        if (!res.ok) break
-        const data = await res.json()
-        allResults = [...allResults, ...(data.results || [])]
-        url = data.next || null
+        try {
+            const res = await fetch(url, { headers: apiHeaders })
+            if (!res.ok) break
+            const data = await res.json()
+            allResults = [...allResults, ...(data.results || [])]
+            url = data.next || null
+            await new Promise(r => setTimeout(r, 200)) // Rate limit between pages
+        } catch {
+            break
+        }
     }
 
     return allResults
@@ -59,11 +64,15 @@ export async function GET(request: NextRequest) {
             away_team_crest: teamCrest(m.away_team_obj?.api_id),
             utc_date: m.event_date,
             status: mapStatus(m.status),
+            home_score: m.home_score ?? null,
+            away_score: m.away_score ?? null,
+            current_minute: m.current_minute ?? null,
             competition_name: m.league?.name ?? 'Unknown',
             competition_code: String(m.league?.id ?? 0),
             match_date: today,
         }))
 
+        // Delete old matches for today and insert fresh ones
         await supabase.from('matches').delete().eq('match_date', today)
         const { error } = await supabase.from('matches').insert(allMatches)
 
@@ -75,6 +84,7 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             inserted: allMatches.length,
             message: `Fetched ${allMatches.length} matches for ${today}`,
+            matchesWithScores: allMatches.filter(m => m.home_score !== null || m.away_score !== null).length
         })
     } catch (err) {
         console.error('Bzzoiro fetch error:', err)
