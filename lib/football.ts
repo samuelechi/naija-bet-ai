@@ -14,7 +14,7 @@ const shortName = (name: string) =>
     name.length > 12 ? name.split(' ').pop() ?? name : name
 
 const teamCrest = (apiId: number) =>
-    apiId ? `https://media.api-sports.io/football/teams/${apiId}.png` : ''
+    apiId ? `${BASE_URL}/img/team/${apiId}/` : ''
 
 async function fetchAllEvents(date: string): Promise<any[]> {
     let allResults: any[] = []
@@ -60,6 +60,9 @@ export async function getTodaysMatches(): Promise<Match[]> {
             },
             utcDate: m.utc_date,
             status: m.status,
+            homeScore: m.home_score,
+            awayScore: m.away_score,
+            currentMinute: m.current_minute,
             competition: {
                 name: m.competition_name,
                 code: m.competition_code,
@@ -76,6 +79,9 @@ export async function getTodaysMatches(): Promise<Match[]> {
             id: m.id,
             utcDate: m.event_date,
             status: mapStatus(m.status),
+            homeScore: m.home_score,
+            awayScore: m.away_score,
+            currentMinute: m.current_minute,
             competition: {
                 name: m.league?.name ?? 'Unknown',
                 code: String(m.league?.id ?? 0),
@@ -108,6 +114,9 @@ export async function getTodaysMatches(): Promise<Match[]> {
                 away_team_crest: teamCrest(m.away_team_obj?.api_id),
                 utc_date: m.event_date,
                 status: mapStatus(m.status),
+                home_score: m.home_score ?? null,
+                away_score: m.away_score ?? null,
+                current_minute: m.current_minute ?? null,
                 competition_name: m.league?.name ?? 'Unknown',
                 competition_code: String(m.league?.id ?? 0),
                 match_date: today,
