@@ -35,73 +35,10 @@ export async function getTodaysMatches(): Promise<Match[]> {
     const supabase = getSupabaseAdmin()
     const today = new Date().toISOString().split('T')[0]
 
-    // Try Supabase cache first
-    const { data, error } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('match_date', today)
-        .order('utc_date', { ascending: true })
-
-    if (!error && data && data.length > 0) {
-        console.log(`Loaded ${data.length} matches from Supabase`)
-        return data.map((m): Match => ({
-            id: m.id,
-            homeTeam: {
-                id: m.home_team_id,
-                name: m.home_team_name,
-                shortName: m.home_team_short,
-                crest: m.home_team_crest,
-            },
-            awayTeam: {
-                id: m.away_team_id,
-                name: m.away_team_name,
-                shortName: m.away_team_short,
-                crest: m.away_team_crest,
-            },
-            utcDate: m.utc_date,
-            status: m.status,
-            homeScore: m.home_score,
-            awayScore: m.away_score,
-            currentMinute: m.current_minute,
-            competition: {
-                name: m.competition_name,
-                code: m.competition_code,
-            },
-        }))
-    }
-
-    // No cache — fetch from Bzzoiro
-    console.log('No matches in Supabase for today, fetching from Bzzoiro...')
     try {
         const events = await fetchAllEvents(today)
 
-        const mappedMatches: Match[] = events.map((m: any): Match => ({
-            id: m.id,
-            utcDate: m.event_date,
-            status: mapStatus(m.status),
-            homeScore: m.home_score,
-            awayScore: m.away_score,
-            currentMinute: m.current_minute,
-            competition: {
-                name: m.league?.name ?? 'Unknown',
-                code: String(m.league?.id ?? 0),
-            },
-            homeTeam: {
-                id: m.home_team_obj?.id ?? 0,
-                name: m.home_team,
-                shortName: shortName(m.home_team_obj?.short_name || m.home_team),
-                crest: teamCrest(m.home_team_obj?.api_id),
-            },
-            awayTeam: {
-                id: m.away_team_obj?.id ?? 0,
-                name: m.away_team,
-                shortName: shortName(m.away_team_obj?.short_name || m.away_team),
-                crest: teamCrest(m.away_team_obj?.api_id),
-            },
-        }))
-
-        // Cache to Supabase
-        if (mappedMatches.length > 0) {
+        if (events.length > 0) {
             const rows = events.map((m: any) => ({
                 id: m.id,
                 home_team_id: m.home_team_obj?.id ?? 0,
@@ -121,16 +58,76 @@ export async function getTodaysMatches(): Promise<Match[]> {
                 competition_code: String(m.league?.id ?? 0),
                 match_date: today,
             }))
-            await supabase.from('matches').delete().eq('match_date', today)
-            await supabase.from('matches').insert(rows)
-            console.log(`Cached ${mappedMatches.length} matches to Supabase`)
-        }
 
-        return mappedMatches
+            await supabase
+                .from('matches')
+                .upsert(rows, { onConflict: 'id' })
+
+            console.log(`Upserted ${rows.length} matches to Supabase`)
+
+            return events.map((m: any): Match => ({
+                id: m.id,
+                utcDate: m.event_date,
+                status: mapStatus(m.status),
+                homeScore: m.home_score ?? null,
+                awayScore: m.away_score ?? null,
+                currentMinute: m.current_minute ?? null,
+                competition: {
+                    name: m.league?.name ?? 'Unknown',
+                    code: String(m.league?.id ?? 0),
+                },
+                homeTeam: {
+                    id: m.home_team_obj?.id ?? 0,
+                    name: m.home_team,
+                    shortName: shortName(m.home_team_obj?.short_name || m.home_team),
+                    crest: teamCrest(m.home_team_obj?.api_id),
+                },
+                awayTeam: {
+                    id: m.away_team_obj?.id ?? 0,
+                    name: m.away_team,
+                    shortName: shortName(m.away_team_obj?.short_name || m.away_team),
+                    crest: teamCrest(m.away_team_obj?.api_id),
+                },
+            }))
+        }
     } catch (err) {
         console.error('Failed to fetch from Bzzoiro:', err)
-        return []
     }
+
+    // Fallback to Supabase cache
+    console.log('Falling back to Supabase cache...')
+    const { data, error } = await supabase
+        .from('matches')
+        .select('*')
+        .eq('match_date', today)
+        .order('utc_date', { ascending: true })
+
+    if (error || !data) return []
+
+    return data.map((m): Match => ({
+        id: m.id,
+        homeTeam: {
+            id: m.home_team_id,
+            name: m.home_team_name,
+            shortName: m.home_team_short,
+            crest: m.home_team_crest,
+        },
+        awayTeam: {
+            id: m.away_team_id,
+            name: m.away_team_name,
+            shortName: m.away_team_short,
+            crest: m.away_team_crest,
+        },
+        utcDate: m.utc_date,
+        status: m.status,
+        homeScore: m.home_score,
+        awayScore: m.away_score,
+        currentMinute: m.current_minute,
+        competition: {
+            name: m.competition_name,
+            code: m.competition_code,
+        },
+    }))
 }
 
 export async function getTeamForm(teamId: number): Promise<FormResult[]> {
