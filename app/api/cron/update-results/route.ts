@@ -151,8 +151,22 @@ function evaluateBet(
 
 export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const expectedAuth = `Bearer ${process.env.CRON_SECRET}`
+
+    console.log('DEBUG: Received auth header:', authHeader)
+    console.log('DEBUG: Expected auth:', expectedAuth)
+    console.log('DEBUG: CRON_SECRET value:', process.env.CRON_SECRET)
+
+    if (authHeader !== expectedAuth) {
+        console.log('DEBUG: Auth mismatch! Returning 401')
+        return NextResponse.json({
+            error: 'Unauthorized',
+            debug: {
+                received: authHeader,
+                expected: expectedAuth,
+                cronSecretSet: !!process.env.CRON_SECRET
+            }
+        }, { status: 401 })
     }
 
     const supabase = getSupabaseAdmin()
