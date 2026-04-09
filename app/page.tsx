@@ -371,7 +371,7 @@ export default function LandingPage() {
         </div>
         <div className="flex gap-2.5">
           <button onClick={() => router.push('/login')} className="px-4 py-2 rounded-xl border border-white/10 hover:bg-white/5 text-xs font-bold transition-all">Login</button>
-          <button onClick={() => router.push('/signup')} className="px-4 py-2 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-xs font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all">Get Free Tips</button>
+          <button onClick={() => router.push('/login')} className="px-4 py-2 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-xs font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all">Get Free Tips</button>
         </div>
       </nav>
 
@@ -401,7 +401,7 @@ export default function LandingPage() {
             </p>
 
             <div className="animate-fade-up delay-400 flex flex-col sm:flex-row gap-3 mb-8 md:mb-10">
-              <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
+              <button onClick={() => router.push('/login')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
                 🚀 Sign Up Free
               </button>
               <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
@@ -578,7 +578,7 @@ export default function LandingPage() {
             Join thousands of Nigerian bettors already using the NaijaBetAI Oracle to make data-driven decisions every matchday.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4 justify-center">
-            <button onClick={() => router.push('/signup')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
+            <button onClick={() => router.push('/login')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
               🚀 Create Free Account
             </button>
             <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
@@ -596,7 +596,7 @@ export default function LandingPage() {
             <span className="font-black text-base">NaijaBet<span className="text-green-500">AI</span></span>
           </div>
           <div className="flex flex-wrap justify-center gap-5 md:gap-8">
-            {[['Privacy Policy', '/privacy-policy'], ['Terms of Service', '#'], ['Login', '/login'], ['Sign Up', '/signup']].map(([label, href]) => (
+            {[['Privacy Policy', '/privacy-policy'], ['Terms of Service', '#'], ['Login', '/login'], ['Sign Up', '/login']].map(([label, href]) => (
               <button key={label} onClick={() => router.push(href)} className="text-xs md:text-sm font-bold text-slate-400 hover:text-white transition-colors">
                 {label}
               </button>
