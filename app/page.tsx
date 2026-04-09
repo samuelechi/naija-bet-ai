@@ -147,8 +147,41 @@ function Counter({ to, suffix = '' }: { to: number; suffix?: string }) {
   return <span ref={ref}>{val}{suffix}</span>
 }
 
+// --- IOS MODAL ---
+function IOSModal({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm pb-8 px-4" onClick={onClose}>
+      <div className="w-full max-w-sm bg-[#111118] border border-green-500/20 rounded-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-xl">📲</div>
+          <div>
+            <p className="text-white font-black text-sm">Add to Home Screen</p>
+            <p className="text-slate-400 text-[11px]">Install NaijaBetAI on your iPhone</p>
+          </div>
+        </div>
+        <div className="space-y-3 mb-5">
+          {[
+            { text: 'Tap the Share button', icon: '⬆️', sub: 'at the bottom of Safari' },
+            { text: 'Scroll and tap', icon: '➕', sub: '"Add to Home Screen"' },
+            { text: 'Tap "Add"', icon: '✅', sub: "and you're done!" },
+          ].map(({ text, icon, sub }) => (
+            <div key={text} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
+              <span className="text-xl">{icon}</span>
+              <div>
+                <p className="text-white text-xs font-bold">{text}</p>
+                <p className="text-slate-400 text-[10px]">{sub}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onClose} className="w-full py-3 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-black">Got it!</button>
+      </div>
+    </div>
+  )
+}
+
 // --- PWA INSTALL BUTTON ---
-function PWAInstallButton() {
+function PWAInstallButton({ variant = 'floating' }: { variant?: 'floating' | 'inline' }) {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
   const [isIOS, setIsIOS] = useState(false)
   const [showIOSModal, setShowIOSModal] = useState(false)
@@ -171,10 +204,7 @@ function PWAInstallButton() {
   }, [])
 
   const handleClick = async () => {
-    if (isIOS) {
-      setShowIOSModal(true)
-      return
-    }
+    if (isIOS) { setShowIOSModal(true); return }
     if (deferredPrompt) {
       deferredPrompt.prompt()
       const { outcome } = await deferredPrompt.userChoice
@@ -184,6 +214,20 @@ function PWAInstallButton() {
   }
 
   if (isInstalled) return null
+
+  if (variant === 'inline') {
+    return (
+      <>
+        <button
+          onClick={handleClick}
+          className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md"
+        >
+          <AndroidLogo size={20} /> Install App (PWA)
+        </button>
+        {showIOSModal && <IOSModal onClose={() => setShowIOSModal(false)} />}
+      </>
+    )
+  }
 
   return (
     <>
@@ -203,48 +247,7 @@ function PWAInstallButton() {
           </div>
         </button>
       </div>
-
-      {/* iOS Instructions Modal */}
-      {showIOSModal && (
-        <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm pb-8 px-4"
-          onClick={() => setShowIOSModal(false)}
-        >
-          <div
-            className="w-full max-w-sm bg-[#111118] border border-green-500/20 rounded-3xl p-6 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-green-500/10 border border-green-500/20 flex items-center justify-center text-xl">📲</div>
-              <div>
-                <p className="text-white font-black text-sm">Add to Home Screen</p>
-                <p className="text-slate-400 text-[11px]">Install NaijaBetAI on your iPhone</p>
-              </div>
-            </div>
-            <div className="space-y-3 mb-5">
-              {[
-                { text: 'Tap the Share button', icon: '⬆️', sub: 'at the bottom of Safari' },
-                { text: 'Scroll and tap', icon: '➕', sub: '"Add to Home Screen"' },
-                { text: 'Tap "Add"', icon: '✅', sub: "and you're done!" },
-              ].map(({ text, icon, sub }) => (
-                <div key={text} className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 border border-white/5">
-                  <span className="text-xl">{icon}</span>
-                  <div>
-                    <p className="text-white text-xs font-bold">{text}</p>
-                    <p className="text-slate-400 text-[10px]">{sub}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowIOSModal(false)}
-              className="w-full py-3 rounded-2xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm font-black"
-            >
-              Got it!
-            </button>
-          </div>
-        </div>
-      )}
+      {showIOSModal && <IOSModal onClose={() => setShowIOSModal(false)} />}
     </>
   )
 }
@@ -326,7 +329,7 @@ export default function LandingPage() {
     },
     {
       question: 'How do I install it on Android?',
-      answer: 'Two options: download the APK directly from this page and install it like any other app, or open naijabetai.com in Chrome and tap "Install App" when the prompt appears. The APK feels more like a native app; the PWA works great too and updates automatically.',
+      answer: 'Open naijabetai.com in Chrome and tap "Install App" when the prompt appears, or tap the floating Install button on this page. The app will be added to your home screen just like a native app.',
     },
     {
       question: 'How do I install it on iPhone?',
@@ -405,9 +408,7 @@ export default function LandingPage() {
               <button onClick={() => router.push('/login')} className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all text-center">
                 🚀 Sign Up Free
               </button>
-              <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
-                <AndroidLogo size={24} /> Download APK
-              </a>
+              <PWAInstallButton variant="inline" />
             </div>
 
             <div className="animate-fade-up delay-500 flex justify-between sm:justify-start sm:gap-10 border-t border-white/5 pt-6">
@@ -475,7 +476,7 @@ export default function LandingPage() {
             { icon: '🌍', title: '30+ Leagues', desc: 'EPL, UCL, La Liga, NPFL, CAF, AFCON and more. Every league you care about, fully covered.' },
             { icon: '📊', title: '15 AI Markets', desc: '1X2, BTTS, Over/Under, Correct Score, HT/FT, Asian Handicap, Double Chance and more.' },
             { icon: '🔔', title: 'Push Notifications', desc: 'Morning tip alerts, live match updates, and expiry reminders delivered straight to your device.' },
-            { icon: '📱', title: 'Android + iPhone', desc: 'Download the APK for Android. Full PWA support for iPhone — use it exactly like a native app.' },
+            { icon: '📱', title: 'Android + iPhone', desc: 'Install as a PWA on any device — works exactly like a native app, no store needed.' },
           ].map((f) => (
             <div key={f.title} className="group bg-[#111118]/50 backdrop-blur-sm border border-white/5 rounded-3xl p-6 md:p-8 hover:-translate-y-1.5 hover:border-green-500/30 hover:bg-[#111118] hover:shadow-[0_10px_30px_-10px_rgba(34,197,94,0.15)] transition-all duration-300">
               <div className="text-3xl md:text-4xl mb-4 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
@@ -582,9 +583,7 @@ export default function LandingPage() {
             <button onClick={() => router.push('/login')} className="w-full sm:w-auto px-8 py-4 rounded-xl bg-linear-to-r from-green-600 to-green-500 text-sm md:text-base font-black shadow-[0_8px_30px_rgba(34,197,94,0.25)] hover:-translate-y-1 transition-all">
               🚀 Create Free Account
             </button>
-            <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
-              <AndroidLogo size={24} /> Download Android APK
-            </a>
+            <PWAInstallButton variant="inline" />
           </div>
         </div>
       </section>
