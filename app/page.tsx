@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { AndroidLogo } from '@/components/AndroidLogo'
 
 // --- BACKGROUND CANVAS ---
 function ParticleCanvas() {
@@ -405,7 +406,7 @@ export default function LandingPage() {
                 🚀 Sign Up Free
               </button>
               <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
-                📲 Download APK
+                <AndroidLogo size={24} /> Download APK
               </a>
             </div>
 
@@ -522,7 +523,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => router.push('/signup')} className="w-full py-4 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold transition-all">
+              <button onClick={() => router.push('/login')} className="w-full py-4 rounded-xl border border-white/10 hover:bg-white/5 text-sm font-bold transition-all">
                 Get Started Free
               </button>
             </div>
@@ -582,7 +583,7 @@ export default function LandingPage() {
               🚀 Create Free Account
             </button>
             <a href="/NaijaBetAI.apk" download className="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-sm md:text-base font-black flex items-center justify-center gap-2 hover:-translate-y-1 transition-all backdrop-blur-md">
-              📲 Download Android APK
+              <AndroidLogo size={24} /> Download Android APK
             </a>
           </div>
         </div>
