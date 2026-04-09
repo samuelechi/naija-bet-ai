@@ -248,12 +248,37 @@ function PWAInstallButton() {
   )
 }
 
+// --- FAQ ITEM ---
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div
+      className={`border rounded-2xl transition-all duration-300 overflow-hidden cursor-pointer ${open ? 'border-green-500/30 bg-[#0c1f12]/60' : 'border-white/5 bg-[#111118]/50 hover:border-white/10'}`}
+      onClick={() => setOpen(o => !o)}
+    >
+      <div className="flex items-center justify-between gap-4 p-5 md:p-6">
+        <span className="text-sm md:text-base font-black text-white leading-snug">{question}</span>
+        <div className={`shrink-0 w-7 h-7 rounded-full flex items-center justify-center border transition-all duration-300 ${open ? 'bg-green-500/20 border-green-500/40 rotate-45' : 'bg-white/5 border-white/10'}`}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+        </div>
+      </div>
+      {open && (
+        <div className="px-5 md:px-6 pb-5 md:pb-6 pt-0">
+          <div className="h-px w-full bg-white/5 mb-4" />
+          <p className="text-sm text-slate-400 leading-relaxed">{answer}</p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // --- MAIN PAGE ---
 export default function LandingPage() {
   const router = useRouter()
   const [checking, setChecking] = useState(true)
-
-  // SLIDER STATE
   const [activeSlide, setActiveSlide] = useState(0)
 
   useEffect(() => {
@@ -271,7 +296,6 @@ export default function LandingPage() {
     })
   }, [])
 
-  // SLIDER TIMER EFFECT (20 seconds)
   useEffect(() => {
     if (checking) return;
     const interval = setInterval(() => {
@@ -285,6 +309,41 @@ export default function LandingPage() {
       <div className="w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full animate-spin shadow-[0_0_15px_#22c55e]" />
     </div>
   )
+
+  const faqs = [
+    {
+      question: 'How accurate are the AI predictions?',
+      answer: 'NaijaBetAI uses Claude AI — one of the most advanced AI models in the world — to analyze team form, head-to-head records, league stats, and more. No prediction service is ever 100% accurate, but our AI gives you a serious data-driven edge over guessing. Use it as a tool to inform your decisions, and always bet responsibly.',
+    },
+    {
+      question: 'Is NaijaBetAI free to use?',
+      answer: 'Yes — you can sign up for free and get 3 AI predictions per day with access to 5 markets. If you want unlimited predictions across all 15 markets and 30+ leagues, upgrade to Pro for ₦6,000/month. Cancel anytime.',
+    },
+    {
+      question: 'Why is the app not on the Play Store or App Store?',
+      answer: "Honest answer: Apple and Google take a 30% cut of every payment made through their stores. That's not a small fee — it's a tax that hurts independent developers and gets passed on to users through higher prices. We chose to stay independent so we can keep our Pro plan affordable. You can install NaijaBetAI directly as a PWA on iPhone or download the APK on Android — no store needed. We do plan to be on the stores eventually, but when we get there, payments will stay on our website so that 30% goes back into improving the product, not into a tech monopoly.",
+    },
+    {
+      question: 'How do I install it on Android?',
+      answer: 'Two options: download the APK directly from this page and install it like any other app, or open naijabetai.com in Chrome and tap "Install App" when the prompt appears. The APK feels more like a native app; the PWA works great too and updates automatically.',
+    },
+    {
+      question: 'How do I install it on iPhone?',
+      answer: 'Open naijabetai.com in Safari, tap the Share button at the bottom of the screen, scroll down and tap "Add to Home Screen", then tap "Add". The app will appear on your home screen just like a native app.',
+    },
+    {
+      question: 'What leagues and markets are covered?',
+      answer: 'We cover 30+ leagues including EPL, Champions League, La Liga, Serie A, Bundesliga, Ligue 1, NPFL, CAF Champions League, MLS, and more. For every match, the AI analyses 15 betting markets: 1X2, BTTS, Over/Under, Correct Score, HT/FT, Asian Handicap, Double Chance, Draw No Bet, First Goal, Clean Sheet, BTTS & Win, Odd/Even Goals, Multi-Goals, Both Halves Over 0.5, and Win to Nil.',
+    },
+    {
+      question: 'Is my payment secure?',
+      answer: "Yes. Payments are processed by Paystack, Nigeria's most trusted payment platform. We never store your card details. Your subscription can be cancelled at any time from your profile page.",
+    },
+    {
+      question: 'Can I cancel my Pro subscription anytime?',
+      answer: 'Yes, absolutely. No lock-in contracts. Cancel from your profile page and your Pro access continues until the end of your current billing period.',
+    },
+  ]
 
   return (
     <div className="bg-[#0A0A0F] min-h-screen text-white font-sans overflow-x-hidden selection:bg-green-500/30">
@@ -364,37 +423,22 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Right Visuals (Dynamic Slider) */}
+          {/* Right Visuals */}
           <div className="relative flex justify-center items-center min-h-100 md:min-h-125 animate-fade-up delay-400 overflow-visible w-full">
-
-            {/* Slide Indicators */}
             <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-30 bg-[#111118]/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
-              <button
-                onClick={() => setActiveSlide(0)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === 0 ? 'w-6 bg-green-500 shadow-[0_0_8px_#22c55e]' : 'w-2 bg-white/20 hover:bg-white/40'}`}
-                aria-label="Show AI Oracle"
-              />
-              <button
-                onClick={() => setActiveSlide(1)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === 1 ? 'w-6 bg-green-500 shadow-[0_0_8px_#22c55e]' : 'w-2 bg-white/20 hover:bg-white/40'}`}
-                aria-label="Show PWA Video"
-              />
+              <button onClick={() => setActiveSlide(0)} className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === 0 ? 'w-6 bg-green-500 shadow-[0_0_8px_#22c55e]' : 'w-2 bg-white/20 hover:bg-white/40'}`} aria-label="Show AI Oracle" />
+              <button onClick={() => setActiveSlide(1)} className={`h-1.5 rounded-full transition-all duration-300 ${activeSlide === 1 ? 'w-6 bg-green-500 shadow-[0_0_8px_#22c55e]' : 'w-2 bg-white/20 hover:bg-white/40'}`} aria-label="Show PWA Video" />
             </div>
 
-            {/* SLIDE 0: Footballer + Circles + Cards */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 0 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
               <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-62.5 h-62.5 bg-green-500/20 rounded-full blur-[60px] pointer-events-none" />
-
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] md:w-[380px] md:h-[380px] rounded-full border border-green-500/30 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[420px] md:w-[580px] md:h-[580px] rounded-full border border-green-500/20 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[560px] h-[560px] md:w-[780px] md:h-[780px] rounded-full border border-green-500/10 pointer-events-none z-0" />
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] md:w-[980px] md:h-[980px] rounded-full border border-green-500/5 pointer-events-none z-0 hidden sm:block" />
-
               <img src="/footballer.png" alt="NaijaBetAI Prediction" className="relative z-10 h-87.5 md:h-112.5 lg:h-137.5 object-contain drop-shadow-[0_0_30px_rgba(34,197,94,0.15)]" />
-
               <FloatingCard className="absolute top-4 -right-2 md:top-10 md:-right-8 lg:-right-12 z-20 scale-[0.65] md:scale-100 origin-right" />
               <FloatingCard delayClass="[animation-delay:1s]" className="absolute -bottom-4 left-0 md:-bottom-2 md:-left-4 z-20 border-indigo-500/20 shadow-[0_8px_32px_-12px_rgba(99,102,241,0.2)] scale-[0.60] md:scale-90 origin-left" />
-
               <div className="absolute bottom-2 -right-4 md:bottom-16 md:-right-12 z-20 bg-[#111118]/90 backdrop-blur-xl border border-green-500/30 rounded-2xl p-3 md:p-4 animate-float shadow-[0_10px_40px_rgba(34,197,94,0.2)] scale-[0.75] md:scale-100 origin-bottom-right">
                 <div className="text-[8px] md:text-[9px] text-slate-400 font-black tracking-widest uppercase mb-1">AI Confidence</div>
                 <div className="text-3xl md:text-4xl font-black text-green-500 leading-none mb-1">87%</div>
@@ -402,29 +446,17 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* SLIDE 1: PWA Video Mockup */}
             <div className={`absolute inset-0 flex justify-center items-center transition-all duration-700 ease-in-out ${activeSlide === 1 ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto z-20' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-0'}`}>
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[400px] bg-green-500/20 rounded-[3rem] blur-[60px] pointer-events-none z-0" />
-
               <div className="relative mt-12 md:mt-0 h-[380px] md:h-[480px] aspect-[9/19] bg-[#0A0A0F] border-[6px] border-slate-800 rounded-[2.5rem] overflow-hidden shadow-[0_0_40px_rgba(34,197,94,0.2)]">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-800 rounded-b-2xl z-10 flex justify-center items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-slate-900" />
                   <div className="w-12 h-1.5 rounded-full bg-slate-900" />
                 </div>
-
-                <video
-                  src="/pwa-video.mp4"
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-
+                <video src="/pwa-video.mp4" autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-linear-to-tr from-white/5 to-transparent pointer-events-none mix-blend-overlay" />
               </div>
             </div>
-
           </div>
         </div>
       </section>
@@ -515,7 +547,22 @@ export default function LandingPage() {
                 Start Pro Plan
               </button>
             </div>
+          </div>
+        </div>
+      </section>
 
+      {/* FAQ */}
+      <section className="py-20 md:py-24 px-5 relative z-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-12 md:mb-16">
+            <div className="text-[10px] md:text-[11px] text-green-500 font-black uppercase tracking-widest mb-3">FAQ</div>
+            <h2 className="text-3xl md:text-5xl font-black tracking-tight">Got Questions?</h2>
+            <p className="text-sm text-slate-400 mt-3">Everything you need to know before you start.</p>
+          </div>
+          <div className="space-y-3">
+            {faqs.map((faq) => (
+              <FAQItem key={faq.question} question={faq.question} answer={faq.answer} />
+            ))}
           </div>
         </div>
       </section>
@@ -523,7 +570,6 @@ export default function LandingPage() {
       {/* FINAL CTA */}
       <section className="py-20 md:py-24 px-5 text-center relative overflow-hidden">
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-75 md:w-150 h-75 md:h-150 bg-green-500/10 rounded-full blur-[100px] pointer-events-none z-0" />
-
         <div className="relative z-10 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight mb-5 md:mb-6">
             Ready to Bet <span className="text-green-500">Smarter?</span>
@@ -549,7 +595,6 @@ export default function LandingPage() {
             <div className="w-8 h-8 rounded-lg bg-linear-to-br from-green-600 to-green-800 flex items-center justify-center text-xs">⚽</div>
             <span className="font-black text-base">NaijaBet<span className="text-green-500">AI</span></span>
           </div>
-
           <div className="flex flex-wrap justify-center gap-5 md:gap-8">
             {[['Privacy Policy', '/privacy-policy'], ['Terms of Service', '#'], ['Login', '/login'], ['Sign Up', '/signup']].map(([label, href]) => (
               <button key={label} onClick={() => router.push(href)} className="text-xs md:text-sm font-bold text-slate-400 hover:text-white transition-colors">
@@ -557,7 +602,6 @@ export default function LandingPage() {
               </button>
             ))}
           </div>
-
           <div className="text-[10px] md:text-xs text-slate-600 font-medium">
             © {new Date().getFullYear()} NaijaBetAI. All rights reserved.
           </div>
