@@ -6,6 +6,7 @@ import MatchCard from '@/components/match/MatchCard'
 import BottomNav from '@/components/layout/BottomNav'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { PWANotificationInit } from '@/components/PWANotificationInit'
 
 // ... (Keep your FILTERS, LEAGUE_MAP, and getMatchStatus exactly as they are)
 const FILTERS = [
@@ -170,6 +171,7 @@ export default function Home() {
     return (
         <div style={{ maxWidth: '430px', margin: '0 auto', minHeight: '100vh', background: '#0A0A0F' }}>
             <main className="flex flex-col min-h-screen relative overflow-hidden">
+                <PWANotificationInit />
 
                 {/* Immersive Background Glow */}
                 <div className="absolute top-0 left-0 right-0 h-96 pointer-events-none opacity-40"
