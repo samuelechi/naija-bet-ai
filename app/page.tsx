@@ -401,7 +401,7 @@ export default function LandingPage() {
             </h1>
 
             <p className="animate-fade-up delay-300 text-sm md:text-lg text-slate-400 leading-relaxed mb-8 max-w-md">
-              Nigeria's first AI-powered football analysis app. Get data-driven predictions across <strong className="text-white">15 betting markets</strong> for EPL, UCL, La Liga & more.
+              Nigeria's first AI-powered football analysis app. Get data-driven predictions across <strong className="text-white">15 betting markets</strong> for EPL, UCL, LA LIGA & more.
             </p>
 
             <div className="animate-fade-up delay-400 flex flex-col sm:flex-row gap-3 mb-8 md:mb-10">
