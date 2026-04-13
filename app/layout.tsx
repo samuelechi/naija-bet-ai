@@ -1,4 +1,3 @@
-
 import type { Metadata } from 'next'
 import './globals.css'
 import OneSignalInit from '../components/OneSignalInit'
@@ -13,20 +12,20 @@ export const metadata: Metadata = {
   publisher: 'NaijaBetAI',
   applicationName: 'NaijaBetAI',
   category: 'sports',
-  metadataBase: new URL('https://naijabetai.com'),
+  metadataBase: new URL('https://www.naijabetai.com'),
   alternates: {
-    canonical: 'https://naijabetai.com',
+    canonical: 'https://www.naijabetai.com',
   },
   openGraph: {
     title: 'NaijaBetAI - AI Football Predictions Nigeria',
     description: 'AI-powered football analysis for Nigerian bettors. 9 markets per match, detailed reasoning, EPL, UCL, La Liga & more. Free & Pro plans.',
-    url: 'https://naijabetai.com',
+    url: 'https://www.naijabetai.com',
     siteName: 'NaijaBetAI',
     locale: 'en_NG',
     type: 'website',
     images: [
       {
-        url: 'https://naijabetai.com/og-image.png',
+        url: 'https://www.naijabetai.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'NaijaBetAI - AI Football Predictions Nigeria',
@@ -37,7 +36,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'NaijaBetAI - AI Football Predictions Nigeria',
     description: 'AI-powered football analysis for Nigerian bettors. 9 markets per match, EPL, UCL & more.',
-    images: ['https://naijabetai.com/og-image.png'],
+    images: ['https://www.naijabetai.com/og-image.png'],
     creator: '@naijabetai',
   },
   robots: {
@@ -66,7 +65,7 @@ const structuredData = {
   '@type': 'MobileApplication',
   name: 'NaijaBetAI',
   description: 'Nigeria\'s first AI-powered football analysis app. Get data-driven insights across 9 betting markets for EPL, Champions League, La Liga & more.',
-  url: 'https://naijabetai.com',
+  url: 'https://www.naijabetai.com',
   applicationCategory: 'SportsApplication',
   operatingSystem: 'Android, Web',
   offers: [
