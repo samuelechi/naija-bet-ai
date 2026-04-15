@@ -81,6 +81,9 @@ const ACCENT_COLORS: Record<string, { from: string; to: string; glow: string }> 
 
 const DEFAULT_ACCENT = { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,0.15)' }
 
+const proxyUrl = (crest: string) =>
+    crest ? `/api/team-logo?url=${encodeURIComponent(crest)}` : ''
+
 export default function MatchCard({ match }: { match: Match }) {
     const router = useRouter()
     const now = new Date()
@@ -155,11 +158,15 @@ export default function MatchCard({ match }: { match: Match }) {
                             {/* FALLBACK EMOJI IMPLEMENTATION */}
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <span className="absolute text-2xl opacity-40 select-none">⚽</span>
-                                <img src={match.homeTeam.crest} className="w-full h-full object-contain relative z-10" alt=""
+                                <img
+                                    src={match.homeTeam.crest ? proxyUrl(match.homeTeam.crest) : ''}
+                                    className="w-full h-full object-contain relative z-10"
+                                    alt=""
                                     onError={(e) => {
                                         e.currentTarget.onerror = null;
                                         e.currentTarget.style.display = 'none';
-                                    }} />
+                                    }}
+                                />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
@@ -188,11 +195,10 @@ export default function MatchCard({ match }: { match: Match }) {
                             {/* FALLBACK EMOJI IMPLEMENTATION */}
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <span className="absolute text-2xl opacity-40 select-none">⚽</span>
-                                <img src={match.awayTeam.crest} className="w-full h-full object-contain relative z-10" alt=""
-                                    onError={(e) => {
-                                        e.currentTarget.onerror = null;
-                                        e.currentTarget.style.display = 'none';
-                                    }} />
+                                <img src={match.awayTeam.crest ? proxyUrl(match.awayTeam.crest) : ''} className="w-full h-full object-contain relative z-10" alt="" onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.style.display = 'none';
+                                }} />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
