@@ -88,8 +88,7 @@ async function sendToPWA({ title, message, userIds, url }: SendNotificationParam
     return { sent, expired }
 }
 
-// Removed the 'export' keyword here to satisfy Vercel/Next.js strict build rules
-async function sendNotification({ title, message, userIds, url }: SendNotificationParams) {
+export async function sendNotification({ title, message, userIds, url }: SendNotificationParams) {
     const [oneSignalResult, pwaResult] = await Promise.all([
         sendToOneSignal({ title, message, userIds, url }),
         sendToPWA({ title, message, userIds, url }),
