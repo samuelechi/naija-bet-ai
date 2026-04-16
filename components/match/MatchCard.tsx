@@ -81,9 +81,6 @@ const ACCENT_COLORS: Record<string, { from: string; to: string; glow: string }> 
 
 const DEFAULT_ACCENT = { from: '#6366F1', to: '#818CF8', glow: 'rgba(99,102,241,0.15)' }
 
-const proxyUrl = (crest: string | undefined) =>
-    crest ? `/api/team-logo?url=${encodeURIComponent(crest)}` : undefined
-
 export default function MatchCard({ match }: { match: Match }) {
     const router = useRouter()
     const now = new Date()
@@ -106,6 +103,15 @@ export default function MatchCard({ match }: { match: Match }) {
 
     const flag = LEAGUE_FLAGS[match.competition.name] || '⚽'
     const accent = ACCENT_COLORS[match.competition.name] || DEFAULT_ACCENT
+
+    // CRITICAL FIX: Checking BOTH the nested structure and the flat database structure.
+    const homeCrestUrl = (match as any).home_team_crest || match.homeTeam?.crest;
+    const awayCrestUrl = (match as any).away_team_crest || match.awayTeam?.crest;
+    console.log("Match Data Check:", {
+        team: match.homeTeam?.name || (match as any).home_team_name,
+        nestedCrest: match.homeTeam?.crest,
+        flatCrest: (match as any).home_team_crest
+    });
 
     return (
         <div
@@ -158,15 +164,21 @@ export default function MatchCard({ match }: { match: Match }) {
                             {/* FALLBACK EMOJI IMPLEMENTATION */}
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <span className="absolute text-2xl opacity-40 select-none">⚽</span>
-                                <img src={match.homeTeam.crest ? proxyUrl(match.homeTeam.crest) : undefined} className="w-full h-full object-contain relative z-10" alt=""
+                                <img
+                                    src={homeCrestUrl ? homeCrestUrl : undefined}
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-contain relative z-10"
+                                    alt=""
                                     onError={(e) => {
                                         e.currentTarget.onerror = null;
                                         e.currentTarget.style.display = 'none';
-                                    }} />
+                                    }}
+                                />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
-                            {match.homeTeam.shortName}
+                            {/* Assumes shortName is mapped correctly, falling back to db row name if needed */}
+                            {match.homeTeam?.shortName || (match as any).home_team_short}
                         </span>
                     </div>
 
@@ -191,15 +203,20 @@ export default function MatchCard({ match }: { match: Match }) {
                             {/* FALLBACK EMOJI IMPLEMENTATION */}
                             <div className="relative w-14 h-14 rounded-2xl bg-[#1A1A24] border border-white/5 flex items-center justify-center p-2.5 shadow-inner">
                                 <span className="absolute text-2xl opacity-40 select-none">⚽</span>
-                                <img src={match.awayTeam.crest ? match.awayTeam.crest : undefined} className="w-full h-full object-contain relative z-10" alt=""
+                                <img
+                                    src={awayCrestUrl ? awayCrestUrl : undefined}
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-contain relative z-10"
+                                    alt=""
                                     onError={(e) => {
                                         e.currentTarget.onerror = null;
                                         e.currentTarget.style.display = 'none';
-                                    }} />
+                                    }}
+                                />
                             </div>
                         </div>
                         <span className="text-white text-[11px] font-black uppercase tracking-tight text-center leading-tight h-8 flex items-center">
-                            {match.awayTeam.shortName}
+                            {match.awayTeam?.shortName || (match as any).away_team_short}
                         </span>
                     </div>
                 </div>

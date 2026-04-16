@@ -13,8 +13,9 @@ function mapStatus(status: string): 'SCHEDULED' | 'LIVE' | 'FINISHED' {
 const shortName = (name: string) =>
     name.length > 12 ? name.split(' ').pop() ?? name : name
 
-const teamCrest = (apiId: number) =>
-    apiId ? `${BASE_URL}/img/team/${apiId}/` : ''
+// Updated to use the new Internal ID format directly from Bzzoiro
+const teamCrest = (id: number) =>
+    id ? `${BASE_URL}/img/team/${id}/` : ''
 
 async function fetchAllEvents(date: string): Promise<any[]> {
     let allResults: any[] = []
@@ -39,54 +40,75 @@ export async function getTodaysMatches(): Promise<Match[]> {
         const events = await fetchAllEvents(today)
 
         if (events.length > 0) {
-            const rows = events.map((m: any) => ({
-                id: m.id,
-                home_team_id: m.home_team_obj?.id ?? 0,
-                home_team_name: m.home_team,
-                home_team_short: shortName(m.home_team_obj?.short_name || m.home_team),
-                home_team_crest: teamCrest(m.home_team_obj?.api_id),
-                away_team_id: m.away_team_obj?.id ?? 0,
-                away_team_name: m.away_team,
-                away_team_short: shortName(m.away_team_obj?.short_name || m.away_team),
-                away_team_crest: teamCrest(m.away_team_obj?.api_id),
-                utc_date: m.event_date,
-                status: mapStatus(m.status),
-                home_score: m.home_score ?? null,
-                away_score: m.away_score ?? null,
-                current_minute: m.current_minute ?? null,
-                competition_name: m.league?.name ?? 'Unknown',
-                competition_code: String(m.league?.id ?? 0),
-                match_date: today,
-            }))
+            // 1. Fetch existing matches first to see if we already have Supabase crests
+            const { data: existingMatches } = await supabase
+                .from('matches')
+                .select('id, home_team_crest, away_team_crest')
+                .in('id', events.map(e => e.id));
+
+            const existingCrests = new Map(existingMatches?.map(m => [m.id, m]) || []);
+
+            const rows = events.map((m: any) => {
+                const existing = existingCrests.get(m.id);
+
+                // Shield logic: Use Supabase link if it exists, otherwise use Bzzoiro link with the NEW ID
+                const homeCrest = existing?.home_team_crest?.includes('supabase.co')
+                    ? existing.home_team_crest
+                    : teamCrest(m.home_team_obj?.id); // Using .id instead of .api_id
+
+                const awayCrest = existing?.away_team_crest?.includes('supabase.co')
+                    ? existing.away_team_crest
+                    : teamCrest(m.away_team_obj?.id); // Using .id instead of .api_id
+
+                return {
+                    id: m.id,
+                    home_team_id: m.home_team_obj?.id ?? 0,
+                    home_team_name: m.home_team,
+                    home_team_short: shortName(m.home_team_obj?.short_name || m.home_team),
+                    home_team_crest: homeCrest,
+                    away_team_id: m.away_team_obj?.id ?? 0,
+                    away_team_name: m.away_team,
+                    away_team_short: shortName(m.away_team_obj?.short_name || m.away_team),
+                    away_team_crest: awayCrest,
+                    utc_date: m.event_date,
+                    status: mapStatus(m.status),
+                    home_score: m.home_score ?? null,
+                    away_score: m.away_score ?? null,
+                    current_minute: m.current_minute ?? null,
+                    competition_name: m.league?.name ?? 'Unknown',
+                    competition_code: String(m.league?.id ?? 0),
+                    match_date: today,
+                };
+            });
 
             await supabase
                 .from('matches')
                 .upsert(rows, { onConflict: 'id' })
 
-            console.log(`Upserted ${rows.length} matches to Supabase`)
+            console.log(`Upserted ${rows.length} matches to Supabase (Crests Shielded)`)
 
-            return events.map((m: any): Match => ({
+            return rows.map((m: any): Match => ({
                 id: m.id,
-                utcDate: m.event_date,
-                status: mapStatus(m.status),
-                homeScore: m.home_score ?? null,
-                awayScore: m.away_score ?? null,
-                currentMinute: m.current_minute ?? null,
+                utcDate: m.utc_date,
+                status: m.status,
+                homeScore: m.home_score,
+                awayScore: m.away_score,
+                currentMinute: m.current_minute,
                 competition: {
-                    name: m.league?.name ?? 'Unknown',
-                    code: String(m.league?.id ?? 0),
+                    name: m.competition_name,
+                    code: m.competition_code,
                 },
                 homeTeam: {
-                    id: m.home_team_obj?.id ?? 0,
-                    name: m.home_team,
-                    shortName: shortName(m.home_team_obj?.short_name || m.home_team),
-                    crest: teamCrest(m.home_team_obj?.api_id),
+                    id: m.home_team_id,
+                    name: m.home_team_name,
+                    shortName: m.home_team_short,
+                    crest: m.home_team_crest,
                 },
                 awayTeam: {
-                    id: m.away_team_obj?.id ?? 0,
-                    name: m.away_team,
-                    shortName: shortName(m.away_team_obj?.short_name || m.away_team),
-                    crest: teamCrest(m.away_team_obj?.api_id),
+                    id: m.away_team_id,
+                    name: m.away_team_name,
+                    shortName: m.away_team_short,
+                    crest: m.away_team_crest,
                 },
             }))
         }
