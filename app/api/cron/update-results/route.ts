@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { sendNotification } from '@/app/api/notifications/send/route'
+import { sendNotification } from '@/lib/notifications'
 
 const BZZOIRO_API = 'https://sports.bzzoiro.com/api'
 const BZZOIRO_TOKEN = process.env.API_FOOTBALL_KEY!

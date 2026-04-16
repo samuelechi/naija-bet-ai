@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { sendNotification } from '@/app/api/notifications/send/route'
+import { sendNotification } from '@/lib/notifications'
 
 export async function GET(request: NextRequest) {
     const authHeader = request.headers.get('authorization')
